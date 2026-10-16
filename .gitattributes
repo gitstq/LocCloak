@@ -1,0 +1,13 @@
+# 默认按文本处理，提交时统一为 LF，检出时按平台约定
+* text=auto eol=lf
+
+# Windows 脚本保持 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制
+*.gpx text eol=lf
+*.png binary
+*.jpg binary
+*.zip binary
+*.tgz binary

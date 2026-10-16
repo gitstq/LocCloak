@@ -1,0 +1,28 @@
+# 依赖与构建产物
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# 本地环境与密钥
+.env
+.env.*
+*.local
+*.gpx.tmp
+
+# 运行期产物
+*.log
+hold.log
+hold.err
+tmp/
+.cache/
+
+# 编辑器与系统
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# 打包
+*.tgz
+*.zip

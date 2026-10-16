@@ -1,0 +1,49 @@
+{
+  "name": "locctl",
+  "version": "1.0.0",
+  "description": "ADB 驱动的 Android 虚拟定位 CLI：常驻推送、坐标系统一换算、GPX 轨迹回放",
+  "type": "commonjs",
+  "bin": {
+    "locctl": "bin/locctl.js"
+  },
+  "main": "src/cli.js",
+  "scripts": {
+    "doctor": "node bin/locctl.js doctor",
+    "loc": "node bin/locctl.js",
+    "demo": "node bin/locctl.js hold --at 杭州西湖",
+    "gpx": "node scripts/make-demo-gpx.js",
+    "test": "node scripts/e2e.js"
+  },
+  "keywords": [
+    "adb",
+    "android",
+    "mock-location",
+    "virtual-location",
+    "gps",
+    "gpx",
+    "gcj02",
+    "bd09",
+    "wgs84",
+    "cli"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "author": "gitstq",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gitstq/locctl.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gitstq/locctl/issues"
+  },
+  "homepage": "https://github.com/gitstq/locctl#readme",
+  "files": [
+    "bin/",
+    "src/",
+    "routes/",
+    "README.md",
+    "LICENSE"
+  ]
+}
