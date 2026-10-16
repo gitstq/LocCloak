@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- 偏好设置可备份，轨迹文件不备份（体积大且用户可重新导入） -->
+    <include domain="sharedpref" path="." />
+    <exclude domain="file" path="routes" />
+</full-backup-content>

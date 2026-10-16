@@ -7,7 +7,6 @@ yarn-error.log*
 .env
 .env.*
 *.local
-*.gpx.tmp
 
 # 运行期产物
 *.log
@@ -26,3 +25,20 @@ Thumbs.db
 # 打包
 *.tgz
 *.zip
+
+# ---- Android（APP/ 子工程）----
+APP/.gradle/
+APP/.kotlin/
+APP/build/
+APP/app/build/
+APP/local.properties
+APP/captures/
+APP/.cxx/
+*.iml
+
+# spike 的解包产物（node deb 解出来的 ~198MB，只保留 NOTES 与 smoke.js）
+APP/spike/alllibs/
+APP/spike/deps/
+APP/spike/libs/
+APP/spike/x/
+APP/spike/*.deb

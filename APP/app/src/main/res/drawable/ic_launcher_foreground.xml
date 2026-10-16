@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 定位图钉 + 十字准星，工具类图标语义 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 外圈准星 -->
+    <path
+        android:strokeColor="#4FC3F7"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M54,26 a28,28 0 1,0 0.01,0 z" />
+    <!-- 准星刻度 -->
+    <path
+        android:strokeColor="#4FC3F7"
+        android:strokeWidth="2.5"
+        android:pathData="M54,20 L54,26 M54,82 L54,88 M20,54 L26,54 M88,54 L82,54" />
+
+    <!-- 图钉主体 -->
+    <path
+        android:fillColor="#0288D1"
+        android:pathData="M54,36 C46.8,36 41,41.8 41,49 C41,58.5 54,72 54,72 C54,72 67,58.5 67,49 C67,41.8 61.2,36 54,36 Z" />
+    <!-- 图钉内孔 -->
+    <path
+        android:fillColor="#0E1116"
+        android:pathData="M54,42.5 m-5.5,0 a5.5,5.5 0 1,0 11,0 a5.5,5.5 0 1,0 -11,0" />
+</vector>

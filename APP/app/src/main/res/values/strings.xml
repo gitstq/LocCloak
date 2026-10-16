@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">locctl</string>
+
+    <!-- 前台服务通知 -->
+    <string name="notif_channel_name">模拟定位状态</string>
+    <string name="notif_channel_desc">常驻显示当前注入的坐标与推送状态</string>
+    <string name="notif_idle">未注入</string>
+    <string name="notif_stop">停止</string>
+    <string name="notif_pushing">正在推送 %1$s</string>
+    <string name="notif_count">已推送 %1$d 次</string>
+</resources>
