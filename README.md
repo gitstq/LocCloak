@@ -2,10 +2,13 @@
 
 把 [littleRich/VirtualLocation](https://github.com/littleRich/VirtualLocation) 的 **ADB 模拟定位**方案，和 [HotWordland/ChangeLocation](https://github.com/HotWordland/ChangeLocation) 的 **坐标系转换 + GPX 轨迹**思路，重写成一个能在 Windows 上直接对着 ADB 设备跑的 Node CLI。
 
-**零 npm 依赖，只要求装了 `adb` 和 Node ≥ 18。**
+**零 npm 依赖，内置官方 ADB（Windows 免安装），只要求 Node ≥ 18。**
+提供两种使用形态：
+- 🖥️ **现代图形化 Web / 桌面 UI 界面**：地图点选、实时轨迹绘制、一键常驻防失效、设备状态看板、一键诊断授权
+- ⌨️ **高性能命令行 CLI**：脚本化自动化注入、极低资源占用
 
 ```
-Node 18+  ·  adb  ·  USB 调试已开启  ·  无需 root
+Node 18+  ·  内置 ADB（免准备）  ·  USB 调试已开启  ·  无需 root
 ```
 
 开发与实测环境：Redmi 24069RA21C / Android 16 (API 36) / HyperOS / 无 root。
@@ -14,14 +17,39 @@ Node 18+  ·  adb  ·  USB 调试已开启  ·  无需 root
 
 ## 目录
 
-- [为什么不用原来那两个方案](#为什么不用原来那两个方案)
-- [快速开始](#快速开始)
+- [一键启动图形 UI](#一键启动图形-ui)
+- [内置 ADB 特性](#内置-adb-特性)
+- [快速开始 (CLI)](#快速开始)
 - [命令一览](#命令一览)
 - [坐标系](#坐标系)
 - [GPX 轨迹回放](#gpx-轨迹回放)
 - [原理](#原理)
 - [排错](#排错)
 - [已知限制](#已知限制)
+
+---
+
+## 一键启动桌面 EXE 客户端
+
+无需安装 Node.js、无需配置 ADB、无黑框控制台闪烁，直接双击运行：
+
+1. **项目直接运行（推荐·秒开）**：
+   - 直接双击根目录下的 **`locctl-ui.exe`**（或 `locctl.exe`）。
+   - 0 秒启动独立桌面应用窗口，系统右下角托盘常驻，退出时自动还原手机真实定位。
+2. **单文件便携独立版（可随意移动、发送给他人）**：
+   - 位于 **`dist/locctl-v2.0.0-windows-x64.exe`**（约 35MB）。
+   - 单个文件内嵌全部运行环境、内置 ADB 与前端界面，拷贝到任何没有开发环境的全新 Windows 电脑上双击即可直接运行！
+3. **命令行 / 脚本启动**：
+   - 双击 `启动UI.bat`，或在终端输入 `npm run ui` / `node bin/locctl.js ui`。
+
+---
+
+## 内置 ADB 特性
+
+本工具已在 `bin/platform-tools/` 内置 Windows 平台经过验证的官方 ADB 程序（`adb.exe`、`AdbWinApi.dll`、`AdbWinUsbApi.dll` 等）：
+- 用户**完全不需要手动安装 Android SDK 或配置 PATH 环境变量**，开箱即用。
+- 自动智能路由优先级：`LOCCTL_ADB` 环境变量 > 项目内置 ADB > 系统全局 ADB。
+
 
 ---
 
@@ -73,6 +101,7 @@ LOCCTL_SERIAL=b615477b node bin/locctl.js goto 上海外滩
 
 | 命令 | 说明 |
 |---|---|
+| `ui` | **启动电脑版 Web / 桌面原生窗口 UI 界面** |
 | `doctor` | 环境自检，自动补 `appops` 权限、打开定位总开关 |
 | `status` | 查看三个 provider 是否被接管、当前注入坐标 |
 | `goto <地名>` | 按内置地点跳转（48 个：国内城市地标 + 境外） |

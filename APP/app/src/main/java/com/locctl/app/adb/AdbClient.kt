@@ -43,6 +43,7 @@ class AdbClient(private val host: String, private val port: Int, private val key
     fun connect() {
         socket = Socket(host, port)
         socket.tcpNoDelay = true
+        socket.soTimeout = 10000
         plainInputStream = DataInputStream(socket.getInputStream())
         plainOutputStream = DataOutputStream(socket.getOutputStream())
 
@@ -57,6 +58,7 @@ class AdbClient(private val host: String, private val port: Int, private val key
 
             val sslContext = key.sslContext
             tlsSocket = sslContext.socketFactory.createSocket(socket, host, port, true) as SSLSocket
+            tlsSocket.soTimeout = 10000
             tlsSocket.startHandshake()
             Log.d(TAG, "Handshake succeeded.")
 
@@ -79,26 +81,42 @@ class AdbClient(private val host: String, private val port: Int, private val key
         if (message.command != A_CNXN) error("not A_CNXN")
     }
 
+    private val localIdGen = java.util.concurrent.atomic.AtomicInteger(0)
+
     fun shellCommand(command: String, listener: ((ByteArray) -> Unit)?) {
-        val localId = 1
+        val localId = localIdGen.incrementAndGet()
         write(A_OPEN, localId, 0, "shell:$command")
 
-        var message = read()
+        var message: AdbMessage
+        // 过滤丢弃旧 stream 的残留包（arg1 != localId）
+        while (true) {
+            message = read()
+            if (message.arg1 == localId) {
+                break
+            }
+            Log.w(TAG, "丢弃过期流数据包: cmd=0x${Integer.toHexString(message.command)}, arg0=${message.arg0}, arg1=${message.arg1}, expected=$localId")
+        }
+
         when (message.command) {
             A_OKAY -> {
+                val remoteId = message.arg0
                 while (true) {
                     message = read()
-                    val remoteId = message.arg0
+                    if (message.arg1 != localId) {
+                        Log.w(TAG, "丢弃非当前流的数据包: cmd=0x${Integer.toHexString(message.command)}, arg1=${message.arg1}, expected=$localId")
+                        continue
+                    }
                     if (message.command == A_WRTE) {
-                        if (message.data_length > 0) {
-                            listener?.invoke(message.data!!)
+                        if (message.data_length > 0 && message.data != null) {
+                            listener?.invoke(message.data)
                         }
                         write(A_OKAY, localId, remoteId)
                     } else if (message.command == A_CLSE) {
                         write(A_CLSE, localId, remoteId)
                         break
                     } else {
-                        error("not A_WRTE or A_CLSE")
+                        Log.w(TAG, "收到非预期 ADB 包 (cmd=0x${Integer.toHexString(message.command)})，跳过该流")
+                        break
                     }
                 }
             }
@@ -107,7 +125,7 @@ class AdbClient(private val host: String, private val port: Int, private val key
                 write(A_CLSE, localId, remoteId)
             }
             else -> {
-                error("not A_OKAY or A_CLSE")
+                Log.w(TAG, "A_OPEN 收到非预期响应: cmd=0x${Integer.toHexString(message.command)}")
             }
         }
     }

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>locctl · Android 虚拟定位控制台</title>
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+  <!-- 顶部状态导航栏 -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo-icon">📍</div>
+      <div class="logo-text">
+        <span class="logo-title">locctl</span>
+        <span class="logo-sub">Android 虚拟定位控制台</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <!-- 设备选择 -->
+      <div class="device-select-box">
+        <span class="status-dot dot-online" id="deviceDot"></span>
+        <select id="deviceSelect" title="切换目标 Android 设备">
+          <option value="">正在检测已连接设备...</option>
+        </select>
+        <button id="btnRefreshDevices" class="icon-btn" title="刷新设备列表">🔄</button>
+      </div>
+
+      <!-- ADB 状态标签 -->
+      <div class="badge badge-adb" id="adbBadge" title="ADB 运行状态">
+        <span class="icon">⚡</span>
+        <span id="adbText">检测 ADB...</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- 权限指示 -->
+      <div class="status-chip" id="permChip" title="Shell Mock 权限">
+        <span class="label">MOCK_LOCATION:</span>
+        <span class="val" id="permVal">检测中</span>
+      </div>
+
+      <!-- 系统定位开关 -->
+      <div class="toggle-control" title="切换系统定位总开关">
+        <span class="toggle-label">系统定位</span>
+        <label class="switch">
+          <input type="checkbox" id="locationSwitch" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Provider 状态 -->
+      <div class="providers-group" title="当前被接管的注入源">
+        <span class="provider-pill" id="pillGps">GPS</span>
+        <span class="provider-pill" id="pillNetwork">NET</span>
+        <span class="provider-pill" id="pillFused">FUSED</span>
+      </div>
+
+      <!-- 全局还原按钮 -->
+      <button id="btnGlobalStop" class="btn btn-danger" title="还原为设备真实定位并停止所有任务">
+        <span class="btn-icon">⏹</span> 还原真实定位
+      </button>
+    </div>
+  </header>
+
+  <!-- 主体工作区 -->
+  <main class="app-body">
+    <!-- 左侧控制面板 -->
+    <aside class="control-panel">
+      <!-- 模式切换标签 -->
+      <nav class="mode-tabs">
+        <button class="tab-btn active" data-tab="tab-hold">
+          <span class="tab-icon">📌</span>
+          <span class="tab-title">常驻/瞬移</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-wander">
+          <span class="tab-icon">🚶</span>
+          <span class="tab-title">随机漫游</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-path">
+          <span class="tab-icon">🗺️</span>
+          <span class="tab-title">轨迹回放</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-tools">
+          <span class="tab-icon">🧰</span>
+          <span class="tab-title">工具&自检</span>
+        </button>
+      </nav>
+
+      <!-- 面板内容滚动区 -->
+      <div class="panel-content">
+        <!-- 任务状态提示条（有任务运行时高亮浮现） -->
+        <div class="active-task-banner hidden" id="taskBanner">
+          <div class="task-info">
+            <span class="pulse-marker"></span>
+            <div class="task-texts">
+              <span class="task-mode-badge" id="taskBannerMode">HOLD 模式运行中</span>
+              <span class="task-detail-text" id="taskBannerDetail">已推送 0 次 · 0 秒</span>
+            </div>
+          </div>
+          <button id="btnStopCurrentTask" class="btn-sm btn-outline-danger">停止</button>
+        </div>
+
+        <!-- 坐标拾取与输入区（常驻/漫游通用） -->
+        <section class="section-card" id="coordCard">
+          <div class="card-header">
+            <h3>目标点位坐标</h3>
+            <span class="hint-text">点击地图拾取</span>
+          </div>
+
+          <div class="form-row-compact">
+            <div class="form-group flex-1">
+              <label>纬度 (Latitude)</label>
+              <input type="number" id="inputLat" step="0.000001" placeholder="30.244236" value="30.244236">
+            </div>
+            <div class="form-group flex-1">
+              <label>经度 (Longitude)</label>
+              <input type="number" id="inputLng" step="0.000001" placeholder="120.141566" value="120.141566">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>输入坐标系</label>
+              <select id="selectCs">
+                <option value="gcj02" selected>GCJ-02 (高德/腾讯/微信·推荐)</option>
+                <option value="wgs84">WGS-84 (GPS原生地理坐标)</option>
+                <option value="bd09">BD-09 (百度坐标系)</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label>目标名称 (选填)</label>
+              <input type="text" id="inputTargetName" placeholder="如：西湖苏堤" value="杭州西湖">
+            </div>
+          </div>
+
+          <!-- 坐标对照快照 -->
+          <div class="coord-preview-box">
+            <div class="coord-kv">
+              <span class="k">WGS-84 (底层注入):</span>
+              <span class="v" id="txtWgsPreview">30.246654, 120.137021</span>
+            </div>
+            <div class="coord-kv">
+              <span class="k">GCJ-02 (地图对齐):</span>
+              <span class="v" id="txtGcjPreview">30.244236, 120.141566</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tab 1: 常驻与单次注入 -->
+        <div class="tab-pane active" id="tab-hold">
+          <section class="section-card">
+            <div class="card-header">
+              <h3>注入参数配置</h3>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label>推送间隔 (毫秒)</label>
+                <input type="number" id="holdInterval" value="500" min="100" max="10000" step="100">
+                <span class="field-tip">推荐 300~500ms（防微信超时）</span>
+              </div>
+              <div class="form-group flex-1">
+                <label>上报精度 (米)</label>
+                <input type="number" id="holdAccuracy" value="5" min="1" max="100" step="1">
+                <span class="field-tip">模拟 GPS 精度</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>接管 Provider (推荐全选)</label>
+              <div class="checkbox-group">
+                <label><input type="checkbox" name="provider" value="gps" checked> GPS</label>
+                <label><input type="checkbox" name="provider" value="network" checked> Network (网络基站)</label>
+                <label><input type="checkbox" name="provider" value="fused" checked> Fused (融合定位)</label>
+              </div>
+            </div>
+
+            <div class="btn-actions-grid">
+              <button id="btnStartHold" class="btn btn-primary btn-large">
+                <span class="icon">🚀</span> 开启常驻推送 (防失效)
+              </button>
+              <button id="btnGotoOnce" class="btn btn-secondary">
+                <span class="icon">⚡</span> 单次瞬移注入
+              </button>
+            </div>
+          </section>
+
+          <!-- 预设地点快速选择 -->
+          <section class="section-card">
+            <div class="card-header">
+              <h3>内置热门地点快速跳转</h3>
+              <select id="presetCatFilter" class="select-sm">
+                <option value="all">全部分类</option>
+              </select>
+            </div>
+            <div class="search-input-box">
+              <input type="text" id="presetSearchInput" placeholder="搜索城市、地标（如：外滩、天安门、香港）...">
+            </div>
+            <div class="preset-chips-container" id="presetChips">
+              <!-- 动态填充 -->
+            </div>
+          </section>
+        </div>
+
+        <!-- Tab 2: 随机漫游 -->
+        <div class="tab-pane" id="tab-wander">
+          <section class="section-card">
+            <div class="card-header">
+              <h3>散步漫游模拟</h3>
+            </div>
+            <p class="desc-text">在当前设定点周围指定半径内随机小步移位，伪装成行人在周边走动，对抗风控与固定打卡点异常检测。</p>
+
+            <div class="form-group">
+              <div class="slider-header">
+                <label>漫游半径 (米)</label>
+                <span class="slider-val" id="valWanderRadius">200 m</span>
+              </div>
+              <input type="range" id="wanderRadius" min="20" max="1500" step="10" value="200">
+            </div>
+
+            <div class="form-group">
+              <div class="slider-header">
+                <label>步频间隔 (秒)</label>
+                <span class="slider-val" id="valWanderInterval">2.0 s</span>
+              </div>
+              <input type="range" id="wanderInterval" min="0.5" max="10" step="0.5" value="2">
+            </div>
+
+            <div class="form-group">
+              <label>漫游精度 (米)</label>
+              <input type="number" id="wanderAccuracy" value="15" min="3" max="50">
+            </div>
+
+            <div class="btn-actions-grid">
+              <button id="btnStartWander" class="btn btn-success btn-large">
+                <span class="icon">🚶</span> 开始随机漫游
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <!-- Tab 3: 轨迹回放 -->
+        <div class="tab-pane" id="tab-path">
+          <section class="section-card">
+            <div class="card-header">
+              <h3>GPX 轨迹回放</h3>
+            </div>
+
+            <div class="form-group">
+              <label>选择内置轨迹</label>
+              <select id="routeSelect">
+                <option value="">加载轨迹列表...</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>或拖入/选择本地 GPX 文件</label>
+              <div class="file-dropzone" id="gpxDropzone">
+                <input type="file" id="gpxFileInput" accept=".gpx" class="hidden">
+                <span class="drop-icon">📁</span>
+                <span class="drop-text" id="gpxDropText">点击或拖拽 .gpx 轨迹文件到此处</span>
+              </div>
+            </div>
+
+            <div class="route-summary-card hidden" id="routeSummary">
+              <div class="summary-item">
+                <span class="k">采样点数:</span>
+                <span class="v" id="txtRoutePoints">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="k">总里程:</span>
+                <span class="v" id="txtRouteDistance">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="k">预计时间:</span>
+                <span class="v" id="txtRouteEstTime">-</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="slider-header">
+                <label>移动速度 (km/h)</label>
+                <span class="slider-val" id="valRouteSpeed">15 km/h</span>
+              </div>
+              <input type="range" id="routeSpeed" min="2" max="120" step="1" value="15">
+              <div class="speed-presets">
+                <button type="button" class="btn-chip" data-speed="5">步行 (5km/h)</button>
+                <button type="button" class="btn-chip" data-speed="15">骑行 (15km/h)</button>
+                <button type="button" class="btn-chip" data-speed="40">驾车 (40km/h)</button>
+                <button type="button" class="btn-chip" data-speed="80">高速 (80km/h)</button>
+              </div>
+            </div>
+
+            <div class="btn-actions-grid">
+              <button id="btnStartPath" class="btn btn-primary btn-large">
+                <span class="icon">▶</span> 开始轨迹回放
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <!-- Tab 4: 工具与自检 -->
+        <div class="tab-pane" id="tab-tools">
+          <section class="section-card">
+            <div class="card-header">
+              <h3>环境体检与一键修复</h3>
+              <button id="btnRunDoctor" class="btn-sm btn-secondary">重新体检</button>
+            </div>
+            <div id="doctorReportBox" class="doctor-box">
+              <div class="doc-item">
+                <span class="label">设备型号:</span>
+                <span class="val" id="docDevice">-</span>
+              </div>
+              <div class="doc-item">
+                <span class="label">Android 版本:</span>
+                <span class="val" id="docAndroid">-</span>
+              </div>
+              <div class="doc-item">
+                <span class="label">Root 状态:</span>
+                <span class="val" id="docRoot">-</span>
+              </div>
+              <div class="doc-item">
+                <span class="label">Mock 权限:</span>
+                <span class="val" id="docPerm">-</span>
+              </div>
+              <div class="doc-item">
+                <span class="label">定位总开关:</span>
+                <span class="val" id="docSwitch">-</span>
+              </div>
+            </div>
+            <div class="mt-2">
+              <button id="btnFixDoctor" class="btn btn-warning w-100">
+                <span class="icon">🔧</span> 一键补齐 MOCK 权限并开启定位
+              </button>
+            </div>
+          </section>
+
+          <section class="section-card">
+            <div class="card-header">
+              <h3>高精度坐标系万能换算</h3>
+            </div>
+            <div class="form-row-compact">
+              <div class="form-group flex-1">
+                <label>纬度</label>
+                <input type="number" id="calcLat" step="0.000001" value="30.274602">
+              </div>
+              <div class="form-group flex-1">
+                <label>经度</label>
+                <input type="number" id="calcLng" step="0.000001" value="120.211963">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label>源坐标系</label>
+                <select id="calcFromCs">
+                  <option value="gcj02" selected>GCJ-02 (高德/腾讯)</option>
+                  <option value="wgs84">WGS-84 (GPS物理)</option>
+                  <option value="bd09">BD-09 (百度)</option>
+                </select>
+              </div>
+              <div class="form-group" style="align-self: flex-end;">
+                <button id="btnRunConvert" class="btn btn-secondary">立即换算</button>
+              </div>
+            </div>
+
+            <div class="convert-results-box" id="calcResults">
+              <div class="conv-row">
+                <span class="conv-label">WGS-84:</span>
+                <span class="conv-val" id="convWgs">-</span>
+              </div>
+              <div class="conv-row">
+                <span class="conv-label">GCJ-02:</span>
+                <span class="conv-val" id="convGcj">-</span>
+              </div>
+              <div class="conv-row">
+                <span class="conv-label">BD-09:</span>
+                <span class="conv-val" id="convBd">-</span>
+              </div>
+              <div class="conv-row">
+                <span class="conv-label">相对物理偏移:</span>
+                <span class="conv-val text-accent" id="convShift">-</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 右侧工作区：地图与控制台日志 -->
+    <div class="map-workarea">
+      <!-- 地图容器 -->
+      <div id="map" class="map-view"></div>
+
+      <!-- 地图工具条悬浮覆盖 -->
+      <div class="map-overlay-tools">
+        <div class="map-layer-selector">
+          <button class="layer-btn active" data-layer="amap-vec" title="高德标准矢量图 (GCJ-02对齐)">高德地图</button>
+          <button class="layer-btn" data-layer="amap-img" title="高德卫星实景图">卫星影像</button>
+          <button class="layer-btn" data-layer="osm" title="OpenStreetMap 全球开源地图">OSM</button>
+        </div>
+        <div class="map-quick-actions">
+          <button id="btnResetView" class="map-icon-btn" title="居中聚焦到当前目标点">🎯 目标</button>
+          <button id="btnCenterChina" class="map-icon-btn" title="查看全国总览">🇨🇳 全国</button>
+        </div>
+      </div>
+
+      <!-- 底部实时活动控制台日志抽屉 -->
+      <footer class="console-drawer" id="consoleDrawer">
+        <div class="drawer-header" id="drawerHeader">
+          <div class="drawer-title">
+            <span class="pulse-indicator"></span>
+            <span>实时活动日志 (Live Terminal)</span>
+          </div>
+          <div class="drawer-actions">
+            <label class="autoscroll-toggle">
+              <input type="checkbox" id="chkAutoScroll" checked> 自动滚动
+            </label>
+            <button id="btnClearLogs" class="btn-xs btn-outline">清屏</button>
+            <button id="btnToggleDrawer" class="btn-xs btn-outline" title="展开/收起日志">折叠</button>
+          </div>
+        </div>
+        <div class="drawer-body" id="consoleOutput">
+          <!-- 实时日志条目 -->
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <!-- 引入 Leaflet 与前端脚本 -->
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

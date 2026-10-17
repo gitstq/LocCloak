@@ -27,6 +27,15 @@ object AppLogger {
     private val _logs = MutableStateFlow<List<LogEntry>>(emptyList())
     val logs: StateFlow<List<LogEntry>> = _logs.asStateFlow()
 
+    private var logFile: java.io.File? = null
+
+    fun init(context: android.content.Context) {
+        runCatching {
+            val dir = context.getExternalFilesDir(null) ?: context.filesDir
+            logFile = java.io.File(dir, "locctl_debug.log")
+        }
+    }
+
     @Synchronized
     private fun log(level: LogLevel, tag: String, message: String, tr: Throwable? = null) {
         val fullMsg = if (tr != null) "$message\n${Log.getStackTraceString(tr).trim()}" else message
@@ -50,6 +59,12 @@ object AppLogger {
             current + entry
         }
         _logs.value = updated
+
+        logFile?.let { file ->
+            runCatching {
+                file.appendText("[${entry.time}] [${entry.level.name}] [${entry.tag}] ${entry.message}\n")
+            }
+        }
     }
 
     fun d(tag: String, message: String) = log(LogLevel.DEBUG, tag, message)
@@ -59,6 +74,7 @@ object AppLogger {
 
     fun clear() {
         _logs.value = emptyList()
+        runCatching { logFile?.delete() }
     }
 
     fun getFormattedLogs(): String {

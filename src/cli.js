@@ -484,6 +484,28 @@ commands.stop = {
   },
 };
 
+commands.ui = {
+  desc: '启动电脑版图形化 Web/桌面 UI 界面',
+  usage: 'locctl ui [--port 8765] [--no-open]',
+  async run({ flags }) {
+    const serverModule = require('./server');
+    const port = num(flags, 'port', 8765);
+    const open = flags['no-open'] !== true;
+
+    title('locctl 图形化控制台');
+    say(c.gray('  正在启动本地服务...'));
+
+    const { url } = await serverModule.startServer({ port, open });
+    say(`  ${c.green('●')} 访问地址: ${c.bold(c.cyan(url))}`);
+    say(`  ${c.gray('内置 ADB')}   已自动装载并优先使用，免安装 ADB`);
+    say(`  ${c.gray('退出服务')}   按 Ctrl+C 停止`);
+    say('');
+
+    // 保持进程驻留
+    await new Promise(() => {});
+  },
+};
+
 commands.help = {
   desc: '显示帮助',
   usage: 'locctl help',

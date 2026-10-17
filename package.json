@@ -1,13 +1,15 @@
 {
   "name": "locctl",
-  "version": "1.0.0",
-  "description": "ADB 驱动的 Android 虚拟定位 CLI：常驻推送、坐标系统一换算、GPX 轨迹回放",
+  "version": "2.0.0",
+  "description": "ADB 驱动的 Android 虚拟定位 CLI 与桌面 UI：内置官方 ADB、常驻推送、坐标系统一换算、GPX 轨迹回放",
   "type": "commonjs",
   "bin": {
     "locctl": "bin/locctl.js"
   },
   "main": "src/cli.js",
   "scripts": {
+    "build:exe": "node scripts/build-exe.js",
+    "ui": "node bin/locctl.js ui",
     "doctor": "node bin/locctl.js doctor",
     "loc": "node bin/locctl.js",
     "demo": "node bin/locctl.js hold --at 杭州西湖",

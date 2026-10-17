@@ -91,22 +91,34 @@ class InjectionForegroundService : Service() {
                 injector.installProviders()
 
                 var count = 0L
+                var consecutiveErrors = 0
                 while (isActive) {
-                    injector.pushLocation(lat, lng, accuracy)
-                    count++
-                    _state.value = InjectionState(isRunning = true, lat = lat, lng = lng, count = count)
-                    if (count % 2 == 0L) {
-                        notifier.update(lat, lng, count, true)
-                    }
-                    if (count == 1L || count % 20 == 0L) {
-                        com.locctl.app.core.AppLogger.d(TAG, "已连续高频注入 $count 次最新定位时间戳")
+                    try {
+                        injector.pushLocation(lat, lng, accuracy)
+                        count++
+                        consecutiveErrors = 0
+                        _state.value = InjectionState(isRunning = true, lat = lat, lng = lng, count = count)
+                        if (count % 2 == 0L) {
+                            notifier.update(lat, lng, count, true)
+                        }
+                        if (count == 1L || count % 20 == 0L) {
+                            com.locctl.app.core.AppLogger.d(TAG, "已连续高频注入 $count 次最新定位时间戳")
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Throwable) {
+                        consecutiveErrors++
+                        com.locctl.app.core.AppLogger.w(TAG, "单次定位推送异常 (连续 $consecutiveErrors 次): ${e.message}")
+                        if (consecutiveErrors >= 5) {
+                            throw e
+                        }
                     }
                     delay(intervalMs)
                 }
             } catch (e: CancellationException) {
                 com.locctl.app.core.AppLogger.d(TAG, "注入循环已正常终止")
             } catch (e: Throwable) {
-                com.locctl.app.core.AppLogger.e(TAG, "注入循环发生异常: ${e.message}", e)
+                com.locctl.app.core.AppLogger.e(TAG, "注入循环连续异常退出: ${e.message}", e)
                 _state.value = InjectionState(isRunning = false, lat = lat, lng = lng, error = e.message)
                 notifier.update(lat, lng, 0, false, error = e.message)
             } finally {
@@ -117,11 +129,15 @@ class InjectionForegroundService : Service() {
 
     private fun stopInjection() {
         com.locctl.app.core.AppLogger.i(TAG, "收到停止注入指令，正在清理测试源...")
-        injectionJob?.cancel()
+        val job = injectionJob
         injectionJob = null
 
         serviceScope.launch {
-            runCatching { injector.restore() }
+            if (job != null) {
+                job.cancelAndJoin()
+            } else {
+                runCatching { injector.restore() }
+            }
             withContext(Dispatchers.Main) {
                 _state.value = InjectionState(isRunning = false)
                 releaseWakeLock()

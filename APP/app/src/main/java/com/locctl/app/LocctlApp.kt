@@ -18,6 +18,7 @@ class LocctlApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        com.locctl.app.core.AppLogger.init(this)
         AdbManager.init(this)
     }
 

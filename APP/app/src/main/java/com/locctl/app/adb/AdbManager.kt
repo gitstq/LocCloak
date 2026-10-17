@@ -7,6 +7,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 private const val TAG = "AdbManager"
 
@@ -87,6 +89,18 @@ object AdbManager {
                 _state.value = AdbState.CONNECTED
                 _statusText.value = "已连接 (端口 $port)"
                 AppLogger.i(TAG, "ADB 握手成功！会话已就绪 (端口 $port)")
+
+                // 自动给自身加入电池优化白名单和后台运行权限，防止切至微信时被系统智能省电休眠冻结
+                val pkg = context.packageName
+                runCatching {
+                    execute("dumpsys deviceidle whitelist +$pkg")
+                    execute("appops set $pkg RUN_IN_BACKGROUND allow")
+                    execute("appops set $pkg RUN_ANY_IN_BACKGROUND allow")
+                    execute("appops set $pkg START_FOREGROUND allow")
+                    execute("cmd appops set $pkg 10008 allow 2>/dev/null")
+                    execute("cmd appops set $pkg 10021 allow 2>/dev/null")
+                    AppLogger.i(TAG, "已自动解除自身后台运行限制（防休眠与自启动白名单）")
+                }
             } catch (e: Exception) {
                 AppLogger.e(TAG, "连接端口 $port 失败: ${e.message}", e)
                 client?.close()
@@ -94,6 +108,29 @@ object AdbManager {
                 _state.value = AdbState.DISCONNECTED
                 _statusText.value = "连接失败: ${e.message}"
             }
+        }
+    }
+
+    private fun reconnectSync(port: Int): Boolean {
+        return try {
+            val context = com.locctl.app.LocctlApp.get()
+            val key = getOrCreateKey(context)
+            client?.close()
+            val newClient = AdbClient("127.0.0.1", port, key)
+            newClient.connect()
+            client = newClient
+            _activePort.value = port
+            _state.value = AdbState.CONNECTED
+            _statusText.value = "已连接 (端口 $port)"
+            AppLogger.i(TAG, "ADB 同步重连成功 (端口 $port)")
+            true
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "ADB 同步重连失败: ${e.message}")
+            client?.close()
+            client = null
+            _state.value = AdbState.DISCONNECTED
+            _statusText.value = "重连失败: ${e.message}"
+            false
         }
     }
 
@@ -110,17 +147,36 @@ object AdbManager {
         _statusText.value = "配对成功，等待连接无线调试..."
     }
 
+    private val execMutex = kotlinx.coroutines.sync.Mutex()
+
     suspend fun execute(command: String): String = withContext(Dispatchers.IO) {
-        val currentClient = client ?: run {
-            AppLogger.e(TAG, "执行命令失败: ADB 未连接 ($command)")
-            error("ADB 未连接")
+        execMutex.withLock {
+            var currentClient = client
+            if (currentClient == null && _activePort.value > 0) {
+                AppLogger.i(TAG, "ADB 未连接，尝试自动重连端口 ${_activePort.value}...")
+                reconnectSync(_activePort.value)
+                currentClient = client
+            }
+            if (currentClient == null) {
+                AppLogger.e(TAG, "执行命令失败: ADB 未连接 ($command)")
+                error("ADB 未连接")
+            }
+            AppLogger.d(TAG, "执行 Shell: $command")
+            try {
+                val out = currentClient.executeCommand(command)
+                if (out.isNotBlank()) {
+                    AppLogger.d(TAG, "返回 -> ${out.trim()}")
+                }
+                return@withLock out
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "执行 Shell 异常，重置 ADB 连接: ${e.message}")
+                client?.close()
+                client = null
+                _state.value = AdbState.DISCONNECTED
+                _statusText.value = "连接异常断开"
+                throw e
+            }
         }
-        AppLogger.d(TAG, "执行 Shell: $command")
-        val out = currentClient.executeCommand(command)
-        if (out.isNotBlank()) {
-            AppLogger.d(TAG, "返回 -> ${out.trim()}")
-        }
-        return@withContext out
     }
 
     fun isConnected(): Boolean = _state.value == AdbState.CONNECTED

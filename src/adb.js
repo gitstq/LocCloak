@@ -1,8 +1,27 @@
 'use strict';
 
 const { execFile, spawn } = require('child_process');
+const path = require('path');
+const fs = require('fs');
 
-const ADB_BIN = process.env.LOCCTL_ADB || 'adb';
+function resolveAdbBin() {
+  if (process.env.LOCCTL_ADB) {
+    return process.env.LOCCTL_ADB;
+  }
+  const candidates = [
+    path.join(__dirname, '..', 'bin', 'platform-tools', process.platform === 'win32' ? 'adb.exe' : 'adb'),
+    path.join(__dirname, '..', 'bin', 'platform-tools', 'adb.exe'),
+    path.join(__dirname, '..', 'bin', 'adb', 'adb.exe'),
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) {
+      return c;
+    }
+  }
+  return 'adb';
+}
+
+const ADB_BIN = resolveAdbBin();
 
 /** 支持 LOCCTL_SERIAL / ANDROID_SERIAL 指定设备 */
 function serial() {
