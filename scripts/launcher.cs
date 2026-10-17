@@ -27,10 +27,10 @@ namespace LocctlLauncher
 
             // 单实例检测
             bool createdNew;
-            singleInstanceMutex = new Mutex(true, "LocctlLauncherSingleInstance_Global", out createdNew);
+            singleInstanceMutex = new Mutex(true, "LocCloakLauncherSingleInstance_Global", out createdNew);
             if (!createdNew)
             {
-                MessageBox.Show("locctl 虚拟定位程序已经在运行中！\n请查看桌面右下角系统托盘图标。", "locctl 提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("隐影斗篷程序已经在运行中！\n请查看桌面右下角系统托盘图标。", "隐影斗篷 (LocCloak) 提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -262,13 +262,13 @@ namespace LocctlLauncher
             });
 
             trayIcon = new NotifyIcon();
-            trayIcon.Text = "locctl 虚拟定位 (双击打开控制台)";
+            trayIcon.Text = "隐影斗篷 (LocCloak) - 双击打开控制台";
             trayIcon.Icon = CreateAppIcon();
             trayIcon.ContextMenu = menu;
             trayIcon.Visible = true;
             trayIcon.DoubleClick += (s, e) => OpenUiWindow(serverPort);
 
-            trayIcon.ShowBalloonTip(2000, "locctl 虚拟定位", "程序已启动，内置 ADB 已就绪。\n双击托盘图标可重新打开界面。", ToolTipIcon.Info);
+            trayIcon.ShowBalloonTip(2000, "隐影斗篷 (LocCloak)", "程序已启动，内置 ADB 已就绪。\n双击托盘图标可重新打开界面。", ToolTipIcon.Info);
         }
 
         private static Icon CreateAppIcon()

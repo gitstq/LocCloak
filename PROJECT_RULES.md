@@ -1,6 +1,6 @@
-# locctl 项目全局研发与发版规则规范 (Project Rules)
+# 隐影斗篷 (LocCloak) 项目全局研发与发版规则规范 (Project Rules)
 
-> 本文档为 `locctl` 项目的最高级别研发规范与发版标准，所有后续的功能开发、版本迭代、Agent 交互与发布流程**必须严格遵守**。
+> 本文档为「隐影斗篷 (LocCloak)」项目的最高级别研发规范与发版标准，所有后续的功能开发、版本迭代、Agent 交互与发布流程**必须严格遵守**。
 
 ---
 
@@ -18,8 +18,8 @@
 
 ### 1.2 GitHub Releases 资产发布规范
 - 每次在 GitHub 发布新版本时，必须打包并上传符合以下命名规范的通用安装包：
-  1. **`Locctl-vX.Y.Z-android-universal.apk`**（首选标准通用包，包含 arm64-v8a / armeabi-v7a / x86_64 架构）；
-  2. **`Locctl-vX.Y.Z-android.apk`**（别名安装包，便于快速分发）。
+  1. **`LocCloak-vX.Y.Z-android-universal.apk`**（首选标准通用包，包含 arm64-v8a / armeabi-v7a / x86_64 架构）；
+  2. **`LocCloak-vX.Y.Z-android.apk`**（别名安装包，便于快速分发）。
 - **Release Body 规范**：每次发版必须在 Release Notes 中提供完整的更新日志、核心变更点与快速使用说明。
 
 ---
@@ -31,9 +31,9 @@
 - 软件内所有的“检查更新”入口必须统一由 `com.locctl.app.update.UpdateManager` 处理，向 GitHub API 发起真实的 HTTP 异步网络交互。
 
 ### 2.2 协议与接口标准
-- **接口地址**：`GET https://api.github.com/repos/gitstq/locctl/releases/latest`
+- **接口地址**：`GET https://api.github.com/repos/gitstq/LocCloak/releases/latest`
 - **请求头配置**：
-  - `User-Agent: locctl-android-client`
+  - `User-Agent: LocCloak-android-client`
   - `Accept: application/vnd.github.v3+json`
   - 超时时间设定：连接超时 ≤ 8000ms，读取超时 ≤ 8000ms。
 - **字段解析与下载策略**：

@@ -1,31 +1,30 @@
-# locctl
+# 隐影斗篷 · LocCloak
 
-把 [littleRich/VirtualLocation](https://github.com/littleRich/VirtualLocation) 的 **ADB 模拟定位**方案，和 [HotWordland/ChangeLocation](https://github.com/HotWordland/ChangeLocation) 的 **坐标系转换 + GPX 轨迹**思路，重写成一个能在 Windows 上直接对着 ADB 设备跑的 Node CLI。
+> **专为 Android 设计的高性能、免选模拟应用、防检测软硬件级虚拟定位控制系统**  
+> 支持 **Android 独立原生 APP**（脱离电脑独立运行）与 **Windows 桌面 EXE / CLI 客户端**（双击即开）。
 
-**零 npm 依赖，内置官方 ADB（Windows 免安装），只要求 Node ≥ 18。**
-提供两种使用形态：
-- 🖥️ **现代图形化 Web / 桌面 UI 界面**：地图点选、实时轨迹绘制、一键常驻防失效、设备状态看板、一键诊断授权
-- ⌨️ **高性能命令行 CLI**：脚本化自动化注入、极低资源占用
+---
 
-```
-Node 18+  ·  内置 ADB（免准备）  ·  USB 调试已开启  ·  无需 root
-```
+## 🌟 核心特性
 
-开发与实测环境：Redmi 24069RA21C / Android 16 (API 36) / HyperOS / 无 root。
+- 🛡️ **免选模拟应用（防嗅探封号）**：系统开发者选项里的「选择模拟位置信息应用」**完全保持为空（无）**，系统底层由 UID 2000 (Shell) 接管注入，微信等目标应用无法嗅探检测；
+- 📱 **Android 原生独立运行**：纯 Kotlin + Jetpack Compose 架构，内置无线 ADB 协议栈，手机端下拉通知栏一键配对，彻底脱离电脑；
+- 🗺️ **高德地图在线交互选点**：内置高德官方标准矢量图与卫星实景影像双图层，带动态瞄准针、地址检索、逆地理编码与热门城市快捷切换；
+- 🔄 **真实在线更新与后台静默比对**：冷启动 1.5 秒后后台自动检测 GitHub 最新版本，零打扰静默体验；
+- 🖥️ **Windows 桌面 EXE 客户端**：内置官方 ADB，开箱即用，双击直接运行 `隐影斗篷.exe`。
 
 ---
 
 ## 目录
 
-- [一键启动图形 UI](#一键启动图形-ui)
-- [内置 ADB 特性](#内置-adb-特性)
+- [一键启动桌面 EXE 客户端](#一键启动桌面-exe-客户端)
+- [Android 原生手机端 App](#android-原生手机端-app)
 - [快速开始 (CLI)](#快速开始)
 - [命令一览](#命令一览)
 - [坐标系](#坐标系)
 - [GPX 轨迹回放](#gpx-轨迹回放)
-- [原理](#原理)
-- [排错](#排错)
-- [已知限制](#已知限制)
+- [原理与防检测机制](#原理)
+- [排错与微信测试关键步骤](#微信测试关键步骤)
 
 ---
 
@@ -34,13 +33,13 @@ Node 18+  ·  内置 ADB（免准备）  ·  USB 调试已开启  ·  无需 roo
 无需安装 Node.js、无需配置 ADB、无黑框控制台闪烁，直接双击运行：
 
 1. **项目直接运行（推荐·秒开）**：
-   - 直接双击根目录下的 **`locctl-ui.exe`**（或 `locctl.exe`）。
+   - 直接双击根目录下的 **`隐影斗篷.exe`**（或 `LocCloak.exe`）。
    - 0 秒启动独立桌面应用窗口，系统右下角托盘常驻，退出时自动还原手机真实定位。
 2. **单文件便携独立版（可随意移动、发送给他人）**：
-   - 位于 **`dist/locctl-v2.0.0-windows-x64.exe`**（约 35MB）。
+   - 位于 **`dist/LocCloak-v2.0.0-windows-x64.exe`**（或 `dist/隐影斗篷-便携单文件版.exe`）。
    - 单个文件内嵌全部运行环境、内置 ADB 与前端界面，拷贝到任何没有开发环境的全新 Windows 电脑上双击即可直接运行！
 3. **命令行开发者调试**：
-   - 在终端直接运行 `npm run ui` 或 `node bin/locctl.js ui`。
+   - 在终端直接运行 `npm run ui` 或 `node bin/loccloak.js ui`。
 
 ---
 

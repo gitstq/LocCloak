@@ -27,6 +27,8 @@ Thumbs.db
 *.zip
 dist/
 /locctl*.exe
+/LocCloak*.exe
+/隐影斗篷*.exe
 /WX*.exe
 bin/node.exe
 !bin/platform-tools/adb.exe

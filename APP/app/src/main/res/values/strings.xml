@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">locctl</string>
+    <string name="app_name">隐影斗篷</string>
 
     <!-- 前台服务通知 -->
     <string name="notif_channel_name">模拟定位状态</string>

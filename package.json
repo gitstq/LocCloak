@@ -1,10 +1,11 @@
 {
-  "name": "locctl",
-  "version": "2.0.0",
-  "description": "ADB 驱动的 Android 虚拟定位 CLI 与桌面 UI：内置官方 ADB、常驻推送、坐标系统一换算、GPX 轨迹回放",
+  "name": "loccloak",
+  "version": "2.1.0",
+  "description": "隐影斗篷 (LocCloak) - Android 虚拟定位控制工具：内置官方 ADB、免选模拟应用、防检测、坐标系统一换算、高德在线选点、GPX 轨迹回放",
   "type": "commonjs",
   "bin": {
-    "locctl": "bin/locctl.js"
+    "loccloak": "bin/loccloak.js",
+    "locctl": "bin/loccloak.js"
   },
   "main": "src/cli.js",
   "scripts": {
@@ -35,12 +36,12 @@
   "author": "gitstq",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gitstq/locctl.git"
+    "url": "git+https://github.com/gitstq/LocCloak.git"
   },
   "bugs": {
-    "url": "https://github.com/gitstq/locctl/issues"
+    "url": "https://github.com/gitstq/LocCloak/issues"
   },
-  "homepage": "https://github.com/gitstq/locctl#readme",
+  "homepage": "https://github.com/gitstq/LocCloak#readme",
   "files": [
     "bin/",
     "src/",

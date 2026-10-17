@@ -87,7 +87,7 @@ fun AboutScreen() {
                     Spacer(Modifier.height(14.dp))
 
                     Text(
-                        "WX定位 · Locctl",
+                        "隐影斗篷 · LocCloak",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold
                     )
@@ -202,16 +202,16 @@ fun AboutScreen() {
                         icon = FeatherIcons.Github,
                         iconColor = MaterialTheme.colorScheme.onSurface,
                         label = "GitHub 开源仓库",
-                        value = "https://github.com/gitstq/locctl",
+                        value = "https://github.com/gitstq/LocCloak",
                         actionText = "访问项目",
                         onAction = {
                             runCatching {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/gitstq/locctl")).apply {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/gitstq/LocCloak")).apply {
                                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 }
                                 context.startActivity(intent)
                             }.onFailure {
-                                clipboardManager.setText(AnnotatedString("https://github.com/gitstq/locctl"))
+                                clipboardManager.setText(AnnotatedString("https://github.com/gitstq/LocCloak"))
                                 Toast.makeText(context, "GitHub 链接已复制到剪贴板", Toast.LENGTH_SHORT).show()
                             }
                         }

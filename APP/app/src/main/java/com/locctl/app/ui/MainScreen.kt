@@ -163,7 +163,7 @@ fun MainScreen(
                     text = {
                         Column {
                             Text(
-                                "检测到 locctl 已发布最新版本，是否现在下载更新？",
+                                "检测到「隐影斗篷 (LocCloak)」已发布最新版本，是否现在下载更新？",
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Spacer(Modifier.height(8.dp))

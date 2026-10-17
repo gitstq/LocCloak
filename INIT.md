@@ -1,14 +1,15 @@
-# locctl 项目初始化与全景研发文档 (Project Init & Architecture Guide)
+# 隐影斗篷 (LocCloak) 项目全景研发与初始化文档 (Project Init & Architecture Guide)
 
+> **项目名称**：隐影斗篷 / LocCloak  
 > **版本**：v2.1.0  
-> **仓库**：[https://github.com/gitstq/locctl](https://github.com/gitstq/locctl)  
+> **开源仓库**：[https://github.com/gitstq/LocCloak](https://github.com/gitstq/LocCloak)  
 > **作者/开发者**：微信：`pOVOq-521` ｜ QQ：`2697905019` ｜ GitHub：[@gitstq](https://github.com/gitstq)
 
 ---
 
 ## 1. 项目概述与愿景
 
-`locctl` 是一套专为 Android 设计的高性能、免选模拟应用、防应用嗅探的**软硬件级虚拟定位控制系统**。
+`隐影斗篷 (LocCloak)` 是一套专为 Android 设计的高性能、免选模拟应用、防应用嗅探的**软硬件级虚拟定位控制系统**。
 项目针对主流社交应用（微信、企业微信等）在特定场景下的高频定位需求，提供全闭环、低延迟、零系统侵入的定位接管方案。
 
 ### 1.1 核心交付形态
@@ -102,7 +103,7 @@ flowchart TD
   - 一键将选定点经纬度回填至主界面，并自动设定坐标系为 GCJ-02。
 
 ### 3.4 真实软件更新与后台静默检测机制
-- **真实联网比对**：向 GitHub Releases API (`GET /repos/gitstq/locctl/releases/latest`) 请求最新元数据，绝不允许延时假冒；
+- **真实联网比对**：向 GitHub Releases API (`GET /repos/gitstq/LocCloak/releases/latest`) 请求最新元数据，绝不允许延时假冒；
 - **分段语义化比对**：采用 `Major.Minor.Patch` 数字数组逐位比对，杜绝字符串字典序错误；
 - **后台静默策略**：APP 冷启动 1.5 秒后在后台异步静默检查，若已是最新版或网络异常保持 100% 零干扰；若发现新版，弹窗展示版本差、更新日志，提供「稍后再说」与「立即更新」。
 
@@ -117,7 +118,7 @@ flowchart TD
 | **1** | **禁止 AI 自行验证** | **严禁 AI 使用 `adb screencap`、`dump`、模拟点击自行验证**。每次构建安装后直接交付，由人工在真机上体验测试，防止垃圾文件污染与手机前台干扰。 |
 | **2** | **真实在线更新** | 必须由 `UpdateManager.checkForUpdates` 发起真实 GitHub Releases API 请求，禁止任何 mock/delay 假逻辑。 |
 | **3** | **语义化版本对齐** | `build.gradle.kts` 的 `versionName` 必须与 GitHub Release Tag (SemVer) 严格一致；`versionCode` 单调递增；禁止界面硬编码版本号。 |
-| **4** | **Release 资产命名规范** | 每次 GitHub 发版必须打包并上传 `Locctl-vX.Y.Z-android-universal.apk` 标准安装包资产。 |
+| **4** | **Release 资产命名规范** | 每次 GitHub 发版必须打包并上传 `LocCloak-vX.Y.Z-android-universal.apk` 标准安装包资产。 |
 | **5** | **UI 悬浮独立圆形按钮** | 底部导航必须保持**悬浮在页面底部的独立圆形按钮（CircleShape）**，中间由空白完全隔开；列表底部必须预留至少 `100.dp` 避让边距。 |
 | **6** | **图标库规范** | 统一采用 `compose.icons.FeatherIcons` 矢量图标库。 |
 | **7** | **命令行与工具调用** | 在非交互管道（如 `run_command`）中执行 `rg` 时，**必须显式提供目标路径**（如 `rg "<pattern>" .`），严禁阻塞挂起。 |
@@ -206,3 +207,4 @@ d:\VS\孙天奇\WX定位/
 - **开发者 QQ**：`2697905019`
 - **GitHub 开源项目**：[https://github.com/gitstq/locctl](https://github.com/gitstq/locctl)
 - **问题反馈与建议**：欢迎在 GitHub Issues 提交反馈。
+

@@ -24,8 +24,9 @@ sealed class UpdateCheckResult {
 }
 
 object UpdateManager {
-    private const val GITHUB_REPO_API = "https://api.github.com/repos/gitstq/locctl/releases/latest"
-    const val GITHUB_RELEASES_PAGE = "https://github.com/gitstq/locctl/releases"
+    private const val PRIMARY_REPO_API = "https://api.github.com/repos/gitstq/LocCloak/releases/latest"
+    private const val FALLBACK_REPO_API = "https://api.github.com/repos/gitstq/locctl/releases/latest"
+    const val GITHUB_RELEASES_PAGE = "https://github.com/gitstq/LocCloak/releases"
 
     /**
      * 发起真实网络请求，查询 GitHub Releases 远端最新版本
@@ -33,17 +34,32 @@ object UpdateManager {
     suspend fun checkForUpdates(currentVersion: String): UpdateCheckResult = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
-            val url = URL(GITHUB_REPO_API)
+            var url = URL(PRIMARY_REPO_API)
             connection = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 connectTimeout = 8000
                 readTimeout = 8000
-                setRequestProperty("User-Agent", "locctl-android-client")
+                setRequestProperty("User-Agent", "LocCloak-android-client")
                 setRequestProperty("Accept", "application/vnd.github.v3+json")
                 instanceFollowRedirects = true
             }
 
-            val responseCode = connection.responseCode
+            var responseCode = connection.responseCode
+            // 若用户尚未在 GitHub 完成改名，无缝回退至旧仓库路径
+            if (responseCode == 404) {
+                connection.disconnect()
+                url = URL(FALLBACK_REPO_API)
+                connection = (url.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = 8000
+                    readTimeout = 8000
+                    setRequestProperty("User-Agent", "LocCloak-android-client")
+                    setRequestProperty("Accept", "application/vnd.github.v3+json")
+                    instanceFollowRedirects = true
+                }
+                responseCode = connection.responseCode
+            }
+
             if (responseCode !in 200..299) {
                 return@withContext UpdateCheckResult.Error(
                     message = "GitHub API 响应异常 (HTTP $responseCode)",
