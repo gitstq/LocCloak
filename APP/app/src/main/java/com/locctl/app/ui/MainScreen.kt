@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +29,18 @@ import compose.icons.feathericons.MapPin
 import compose.icons.feathericons.Terminal
 import compose.icons.feathericons.Info
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.LocalContext
+import com.locctl.app.BuildConfig
+import com.locctl.app.update.UpdateCheckResult
+import com.locctl.app.update.UpdateInfo
+import com.locctl.app.update.UpdateManager
+import compose.icons.feathericons.Download
+import kotlinx.coroutines.delay
+
 enum class AppTab(
     val title: String,
     val subtitle: String,
@@ -45,8 +58,20 @@ fun MainScreen(
     initialLat: Double? = null,
     initialLng: Double? = null
 ) {
+    val context = LocalContext.current
     var selectedTab by remember {
         mutableStateOf(if (initialLat != null && initialLng != null) AppTab.LOCATION else AppTab.ADB)
+    }
+
+    // 后台静默检查更新状态（若无更新或网络故障完全静默不打扰；若有更新则弹出询问）
+    var autoUpdateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
+
+    LaunchedEffect(Unit) {
+        delay(1500) // 冷启动后延时 1.5 秒发起轻量检测，避免资源竞争
+        val result = UpdateManager.checkForUpdates(BuildConfig.VERSION_NAME)
+        if (result is UpdateCheckResult.HasUpdate) {
+            autoUpdateInfo = result.info
+        }
     }
 
     Scaffold(
@@ -109,6 +134,100 @@ fun MainScreen(
                         onClick = { selectedTab = tab }
                     )
                 }
+            }
+
+            // 3. 后台静默检测到新版本时的询问弹窗
+            autoUpdateInfo?.let { info ->
+                AlertDialog(
+                    onDismissRequest = { autoUpdateInfo = null },
+                    shape = RoundedCornerShape(20.dp),
+                    icon = {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF2EA44F).copy(alpha = 0.15f),
+                            modifier = Modifier.size(52.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    FeatherIcons.Download,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2EA44F),
+                                    modifier = Modifier.size(26.dp)
+                                )
+                            }
+                        }
+                    },
+                    title = {
+                        Text("🎉 发现新版本 ${info.latestVersion}", fontWeight = FontWeight.Bold)
+                    },
+                    text = {
+                        Column {
+                            Text(
+                                "检测到 locctl 已发布最新版本，是否现在下载更新？",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                            ) {
+                                Text(
+                                    "当前: v${BuildConfig.VERSION_NAME}  ➔  最新: ${info.latestVersion}",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 160.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(10.dp)
+                                        .verticalScroll(rememberScrollState())
+                                ) {
+                                    Text(
+                                        info.releaseNotes,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        lineHeight = 18.sp
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            shape = CircleShape,
+                            onClick = {
+                                autoUpdateInfo = null
+                                runCatching {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(info.downloadUrl)).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    context.startActivity(intent)
+                                }
+                            }
+                        ) {
+                            Icon(FeatherIcons.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("立即更新")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            shape = CircleShape,
+                            onClick = { autoUpdateInfo = null }
+                        ) {
+                            Text("稍后再说")
+                        }
+                    }
+                )
             }
         }
     }
