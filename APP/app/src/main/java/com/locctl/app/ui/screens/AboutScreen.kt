@@ -27,6 +27,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.locctl.app.BuildConfig
+import com.locctl.app.update.UpdateCheckResult
+import com.locctl.app.update.UpdateManager
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.*
 import kotlinx.coroutines.delay
@@ -37,9 +40,10 @@ import kotlinx.coroutines.launch
 fun AboutScreen() {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val currentVersion = BuildConfig.VERSION_NAME
 
     var isCheckingUpdate by remember { mutableStateOf(false) }
-    var showUpdateDialog by remember { mutableStateOf(false) }
+    var updateCheckResult by remember { mutableStateOf<UpdateCheckResult?>(null) }
     var showChangelogDialog by remember { mutableStateOf(false) }
 
     LazyColumn(
@@ -92,7 +96,7 @@ fun AboutScreen() {
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                     ) {
                         Text(
-                            "版本 v1.0.0 (Release) · Android 12 ~ 16",
+                            "版本 v$currentVersion (Release) · Android 11 ~ 16",
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -164,7 +168,7 @@ fun AboutScreen() {
 
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        "当前编译架构: 纯 Kotlin/Jetpack Compose 原生 · 无 Node.js 冗余",
+                        "当前已安装版本: v$currentVersion · 真实连接 GitHub Releases 校验",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -179,9 +183,9 @@ fun AboutScreen() {
                             onClick = {
                                 coroutineScope.launch {
                                     isCheckingUpdate = true
-                                    delay(600)
+                                    val result = UpdateManager.checkForUpdates(currentVersion)
                                     isCheckingUpdate = false
-                                    showUpdateDialog = true
+                                    updateCheckResult = result
                                 }
                             },
                             enabled = !isCheckingUpdate,
@@ -190,7 +194,7 @@ fun AboutScreen() {
                         ) {
                             Icon(FeatherIcons.RefreshCw, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text("检查更新")
+                            Text(if (isCheckingUpdate) "检查中..." else "检查更新")
                         }
 
                         OutlinedButton(
@@ -345,48 +349,221 @@ fun AboutScreen() {
         }
     }
 
-    // 检查更新结果对话框
-    if (showUpdateDialog) {
-        AlertDialog(
-            onDismissRequest = { showUpdateDialog = false },
-            shape = RoundedCornerShape(20.dp),
-            icon = {
-                Surface(
-                    shape = CircleShape,
-                    color = Color(0xFF2EA44F).copy(alpha = 0.15f),
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(FeatherIcons.CheckCircle, contentDescription = null, tint = Color(0xFF2EA44F), modifier = Modifier.size(24.dp))
+    // 真实的 GitHub Releases 检查更新结果对话框
+    updateCheckResult?.let { result ->
+        when (result) {
+            is UpdateCheckResult.HasUpdate -> {
+                AlertDialog(
+                    onDismissRequest = { updateCheckResult = null },
+                    shape = RoundedCornerShape(20.dp),
+                    icon = {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF2EA44F).copy(alpha = 0.15f),
+                            modifier = Modifier.size(52.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    FeatherIcons.Download,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2EA44F),
+                                    modifier = Modifier.size(26.dp)
+                                )
+                            }
+                        }
+                    },
+                    title = {
+                        Text(
+                            "🎉 发现新版本 ${result.info.latestVersion}",
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    text = {
+                        Column {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                            ) {
+                                Text(
+                                    "当前版本: v${result.info.currentVersion}  ➔  最新: ${result.info.latestVersion}",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+
+                            Spacer(Modifier.height(10.dp))
+
+                            Text(
+                                "更新日志与发版说明：",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 220.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(10.dp)
+                                        .verticalScroll(rememberScrollState())
+                                ) {
+                                    Text(
+                                        result.info.releaseNotes,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        lineHeight = 18.sp
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            shape = CircleShape,
+                            onClick = {
+                                updateCheckResult = null
+                                runCatching {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(result.info.downloadUrl)).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    context.startActivity(intent)
+                                }.onFailure {
+                                    Toast.makeText(context, "无法打开系统浏览器，请手动访问 GitHub", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        ) {
+                            Icon(FeatherIcons.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("立即下载新版")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            shape = CircleShape,
+                            onClick = { updateCheckResult = null }
+                        ) {
+                            Text("稍后再说")
+                        }
                     }
-                }
-            },
-            title = { Text("检查更新结果", fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    Text(
-                        "🎉 当前已是最新正式版本 (v1.0.0)！",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2EA44F)
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "已包含 Shizuku 同款无线 ADB 协议栈、单页独立架构、微信防 Wi-Fi 嗅探机制以及常用地址保存库。",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = { showUpdateDialog = false },
-                    shape = CircleShape
-                ) {
-                    Text("确定")
-                }
+                )
             }
-        )
+            is UpdateCheckResult.UpToDate -> {
+                AlertDialog(
+                    onDismissRequest = { updateCheckResult = null },
+                    shape = RoundedCornerShape(20.dp),
+                    icon = {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF2EA44F).copy(alpha = 0.15f),
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    FeatherIcons.CheckCircle,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2EA44F),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    },
+                    title = { Text("已是最新版本", fontWeight = FontWeight.Bold) },
+                    text = {
+                        Column {
+                            Text(
+                                "🎉 当前已是最新正式版本 (v${result.currentVersion})！",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2EA44F)
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "已包含 Shizuku 同款无线 ADB 协议栈、单页独立架构、微信防 Wi-Fi 嗅探机制以及常用地址保存库，暂无更新需要。",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { updateCheckResult = null },
+                            shape = CircleShape
+                        ) {
+                            Text("确定")
+                        }
+                    }
+                )
+            }
+            is UpdateCheckResult.Error -> {
+                AlertDialog(
+                    onDismissRequest = { updateCheckResult = null },
+                    shape = RoundedCornerShape(20.dp),
+                    icon = {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    FeatherIcons.AlertCircle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    },
+                    title = { Text("检查更新失败", fontWeight = FontWeight.Bold) },
+                    text = {
+                        Column {
+                            Text(
+                                result.message,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "由于国内访问 GitHub 偶发网络波动或限流，您可以直接在手机浏览器中打开 GitHub 发行版页面下载最新安装包。",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                updateCheckResult = null
+                                runCatching {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(result.fallbackUrl)).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    context.startActivity(intent)
+                                }
+                            },
+                            shape = CircleShape
+                        ) {
+                            Icon(FeatherIcons.ExternalLink, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("打开发行页面")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            shape = CircleShape,
+                            onClick = { updateCheckResult = null }
+                        ) {
+                            Text("关闭")
+                        }
+                    }
+                )
+            }
+        }
     }
 
     // 更新日志对话框
