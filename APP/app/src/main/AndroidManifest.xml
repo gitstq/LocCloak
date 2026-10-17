@@ -2,28 +2,27 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- 定位：模拟定位需要持有真实定位权限 -->
+    <!-- 定位权限：Android 14+ 前台服务 location 类型要求持有 -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
-    <!-- 前台服务：Android 14 起必须声明类型 -->
+    <!-- 前台服务 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SHORT_SERVICE" />
 
-    <!-- 通知：Android 13 起需运行时申请 -->
+    <!-- 通知：Android 13+ 运行时通知 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- 息屏后不被杀死，否则常驻推送中断 -->
+    <!-- 本地 ADB 通信与无线调试 mDNS 发现 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
+    <!-- 息屏保活与开机恢复 -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-
-    <!-- 开机自启（用户可关） -->
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-
-    <!-- 唤醒锁，避免推送循环在休眠时被挂起 -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-
-    <!-- 不需要网络权限：Node 桥接走 stdio，不监听端口 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".LocctlApp"
@@ -48,15 +47,19 @@
             </intent-filter>
         </activity>
 
-        <!--
-            常驻注入服务。
-            foregroundServiceType="location" 是 Android 14 起使用定位类前台服务的硬性要求。
-        -->
+        <!-- 常驻高频模拟定位服务 -->
         <service
             android:name=".service.InjectionForegroundService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <!-- 无线调试通知栏配对截码服务 -->
+        <service
+            android:name=".adb.AdbPairingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="shortService" />
 
         <receiver
             android:name=".service.BootReceiver"
@@ -68,16 +71,5 @@
             </intent-filter>
         </receiver>
 
-        <!--
-            Shizuku  provider：让本 App 能被 Shizuku 识别为支持方。
-            即使本 App 内置 server，这个声明仍是标准做法。
-        -->
-        <provider
-            android:name="rikka.shizuku.ShizukuProvider"
-            android:authorities="${applicationId}.shizuku"
-            android:enabled="true"
-            android:exported="true"
-            android:multiprocess="false"
-            tools:ignore="ExportedContentProvider" />
     </application>
 </manifest>

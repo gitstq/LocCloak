@@ -42,3 +42,9 @@ APP/spike/deps/
 APP/spike/libs/
 APP/spike/x/
 APP/spike/*.deb
+
+# 真机调试时产生的临时文件（截图、UI 树 dump、构建日志）
+APP/*.png
+APP/*.xml
+APP/compile.out
+APP/compile.err

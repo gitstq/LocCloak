@@ -1,12 +1,24 @@
-# Shizuku 通过 AIDL 反射调用，保留其接口
--keep class dev.rikka.shizuku.** { *; }
--keep interface dev.rikka.shizuku.** { *; }
+-keepclassmembers class * implements android.os.Parcelable {
+    public static final ** CREATOR;
+}
 
-# 保留 aidl 生成的 Binder  stub
--keep class * extends android.os.Binder { *; }
+# JNI native methods
+-keepclasseswithmembernames,includedescriptorclasses class * {
+    native <methods>;
+}
 
-# Kotlin 协程
+# PairingContext is looked up via JNI in libadb.so
+-keep class moe.shizuku.manager.adb.PairingContext { *; }
+
+# HiddenApiBypass and Conscrypt reflection
+-keep class org.lsposed.hiddenapibypass.** { *; }
+
+# BouncyCastle classes used by AdbKey
+-keep class org.bouncycastle.asn1.** { *; }
+-keep class org.bouncycastle.cert.** { *; }
+-keep class org.bouncycastle.operator.** { *; }
+-dontwarn org.bouncycastle.**
+
+# Kotlin Coroutines and Compose
 -dontwarn kotlinx.coroutines.**
-
-# Compose
 -dontwarn androidx.compose.**

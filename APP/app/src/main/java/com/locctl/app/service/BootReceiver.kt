@@ -5,12 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 
-/**
- * 开机自启。
- *
- * 只在用户显式开启过该选项时才恢复推送 —— 否则会在用户不知情时
- * 启动一个持有 WakeLock 的前台服务，属于侵犯性行为。
- */
 class BootReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -31,14 +25,11 @@ class BootReceiver : BroadcastReceiver() {
         val parts = last.split(",")
         if (parts.size != 2) return
 
-        Log.i(TAG, "restoring last mock point after $action")
-        InjectionForegroundService.hold(
-            context,
-            com.locctl.app.core.GeoPoint(
-                parts[0].toDoubleOrNull() ?: return,
-                parts[1].toDoubleOrNull() ?: return,
-            ),
-        )
+        val lat = parts[0].toDoubleOrNull() ?: return
+        val lng = parts[1].toDoubleOrNull() ?: return
+
+        Log.i(TAG, "restoring last mock point after $action: $lat, $lng")
+        InjectionForegroundService.start(context, lat, lng)
     }
 
     companion object {

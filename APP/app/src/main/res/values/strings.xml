@@ -9,4 +9,20 @@
     <string name="notif_stop">停止</string>
     <string name="notif_pushing">正在推送 %1$s</string>
     <string name="notif_count">已推送 %1$d 次</string>
+
+    <!-- 无线配对通知 -->
+    <string name="notification_channel_adb_pairing">无线配对服务</string>
+    <string name="notification_adb_pairing_searching_for_service_title">正在搜索无线配对服务…</string>
+    <string name="notification_adb_pairing_service_found_title">已发现配对服务，请输入配对码</string>
+    <string name="notification_adb_pairing_working_title">正在配对…</string>
+    <string name="notification_adb_pairing_succeed_title">配对成功</string>
+    <string name="notification_adb_pairing_succeed_text">无线调试已成功配对，后续可直接连接</string>
+    <string name="notification_adb_pairing_failed_title">配对失败</string>
+    <string name="notification_adb_pairing_stop_searching">停止搜索</string>
+    <string name="notification_adb_pairing_retry">重试</string>
+    <string name="dialog_adb_pairing_paring_code">配对码</string>
+    <string name="notification_adb_pairing_input_paring_code">输入 6 位配对码</string>
+    <string name="cannot_connect_port">无法连接到配对端口</string>
+    <string name="paring_code_is_wrong">配对码错误或已失效</string>
+    <string name="adb_error_key_store">密钥生成或读取错误</string>
 </resources>
