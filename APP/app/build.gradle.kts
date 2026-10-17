@@ -83,4 +83,8 @@ dependencies {
     // ADB 协议栈相关：BouncyCastle 生成自签证书，HiddenApiBypass 绕过非公开 API 限制
     implementation(libs.bouncycastle.bcpkix)
     implementation(libs.hiddenapibypass)
+
+    // 第三方精美图标库 (Feather Icons & Tabler Icons for Compose)
+    implementation("br.com.devsrsouza.compose.icons:feather:1.1.1")
+    implementation("br.com.devsrsouza.compose.icons:tabler-icons:1.1.1")
 }

@@ -85,6 +85,11 @@ class InjectionForegroundService : Service() {
 
         injectionJob?.cancel()
         injectionJob = serviceScope.launch {
+            _isRunning.value = true
+            _injectCount.value = 0L
+            _targetLat.value = lat
+            _targetLng.value = lng
+            _lastError.value = null
             _state.value = InjectionState(isRunning = true, lat = lat, lng = lng, count = 0)
             try {
                 com.locctl.app.core.AppLogger.i(TAG, "启动前台注入服务，目标坐标 WGS: %.6f, %.6f (间隔: %d ms)".format(lat, lng, intervalMs))
@@ -97,6 +102,7 @@ class InjectionForegroundService : Service() {
                         injector.pushLocation(lat, lng, accuracy)
                         count++
                         consecutiveErrors = 0
+                        _injectCount.value = count
                         _state.value = InjectionState(isRunning = true, lat = lat, lng = lng, count = count)
                         if (count % 2 == 0L) {
                             notifier.update(lat, lng, count, true)
@@ -119,6 +125,8 @@ class InjectionForegroundService : Service() {
                 com.locctl.app.core.AppLogger.d(TAG, "注入循环已正常终止")
             } catch (e: Throwable) {
                 com.locctl.app.core.AppLogger.e(TAG, "注入循环连续异常退出: ${e.message}", e)
+                _isRunning.value = false
+                _lastError.value = e.message
                 _state.value = InjectionState(isRunning = false, lat = lat, lng = lng, error = e.message)
                 notifier.update(lat, lng, 0, false, error = e.message)
             } finally {
@@ -139,6 +147,7 @@ class InjectionForegroundService : Service() {
                 runCatching { injector.restore() }
             }
             withContext(Dispatchers.Main) {
+                _isRunning.value = false
                 _state.value = InjectionState(isRunning = false)
                 releaseWakeLock()
                 ServiceCompat.stopForeground(this@InjectionForegroundService, ServiceCompat.STOP_FOREGROUND_REMOVE)
@@ -168,6 +177,7 @@ class InjectionForegroundService : Service() {
         serviceScope.cancel()
         releaseWakeLock()
         notifier.cancel()
+        _isRunning.value = false
         _state.value = InjectionState(isRunning = false)
         super.onDestroy()
     }
@@ -184,6 +194,21 @@ class InjectionForegroundService : Service() {
         const val EXTRA_LNG = "lng"
         const val EXTRA_INTERVAL = "interval"
         const val EXTRA_ACCURACY = "accuracy"
+
+        private val _isRunning = MutableStateFlow(false)
+        val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
+
+        private val _injectCount = MutableStateFlow(0L)
+        val injectCount: StateFlow<Long> = _injectCount.asStateFlow()
+
+        private val _targetLat = MutableStateFlow(0.0)
+        val targetLat: StateFlow<Double> = _targetLat.asStateFlow()
+
+        private val _targetLng = MutableStateFlow(0.0)
+        val targetLng: StateFlow<Double> = _targetLng.asStateFlow()
+
+        private val _lastError = MutableStateFlow<String?>(null)
+        val lastError: StateFlow<String?> = _lastError.asStateFlow()
 
         private val _state = MutableStateFlow(InjectionState())
         val state: StateFlow<InjectionState> = _state.asStateFlow()

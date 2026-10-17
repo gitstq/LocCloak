@@ -46,8 +46,8 @@ fun LogsScreen() {
     }
 
     LaunchedEffect(filteredLogs.size, autoScroll) {
-        if (autoScroll && filteredLogs.isNotEmpty()) {
-            listState.animateScrollToItem(filteredLogs.size - 1)
+        if (autoScroll && !listState.isScrollInProgress && filteredLogs.isNotEmpty()) {
+            listState.scrollToItem(filteredLogs.size - 1)
         }
     }
 

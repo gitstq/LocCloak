@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import com.locctl.app.core.GeoPoint
 import com.locctl.app.service.InjectionForegroundService
-import com.locctl.app.ui.MainSingleScreen
+import com.locctl.app.ui.MainScreen
 import com.locctl.app.ui.theme.LocctlTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background,
                 ) {
                     val pending by pendingInject.collectAsState()
-                    MainSingleScreen(
+                    MainScreen(
                         initialLat = pending?.lat,
                         initialLng = pending?.lng
                     )

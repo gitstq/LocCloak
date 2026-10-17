@@ -4,6 +4,7 @@ import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -36,6 +37,8 @@ object AppLogger {
         }
     }
 
+    private val ioScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO + kotlinx.coroutines.SupervisorJob())
+
     @Synchronized
     private fun log(level: LogLevel, tag: String, message: String, tr: Throwable? = null) {
         val fullMsg = if (tr != null) "$message\n${Log.getStackTraceString(tr).trim()}" else message
@@ -61,8 +64,10 @@ object AppLogger {
         _logs.value = updated
 
         logFile?.let { file ->
-            runCatching {
-                file.appendText("[${entry.time}] [${entry.level.name}] [${entry.tag}] ${entry.message}\n")
+            ioScope.launch {
+                runCatching {
+                    file.appendText("[${entry.time}] [${entry.level.name}] [${entry.tag}] ${entry.message}\n")
+                }
             }
         }
     }

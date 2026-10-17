@@ -161,10 +161,13 @@ object AdbManager {
                 AppLogger.e(TAG, "执行命令失败: ADB 未连接 ($command)")
                 error("ADB 未连接")
             }
-            AppLogger.d(TAG, "执行 Shell: $command")
+            val isHighFrequency = command.contains("set-test-provider-location")
+            if (!isHighFrequency) {
+                AppLogger.d(TAG, "执行 Shell: $command")
+            }
             try {
                 val out = currentClient.executeCommand(command)
-                if (out.isNotBlank()) {
+                if (out.isNotBlank() && !isHighFrequency) {
                     AppLogger.d(TAG, "返回 -> ${out.trim()}")
                 }
                 return@withLock out

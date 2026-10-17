@@ -38,10 +38,10 @@ fun LocationScreen(
     initialLng: Double? = null
 ) {
     val context = LocalContext.current
-    val scrollState = rememberScrollState()
 
-    // 注入状态
-    val injectionState by InjectionForegroundService.state.collectAsState()
+    // 仅监听低频的运行状态与错误，避免 500ms 高频重组
+    val isRunning by InjectionForegroundService.isRunning.collectAsState()
+    val lastError by InjectionForegroundService.lastError.collectAsState()
 
     // 常用地址列表
     val savedLocations by SavedLocationManager.locations.collectAsState()
@@ -64,18 +64,17 @@ fun LocationScreen(
         CoordsConverter.toWgs84(parsedLat, parsedLng, selectedCoordSystem)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(16.dp),
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // ==================== 卡片 1：目标位置设置 ====================
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -228,174 +227,143 @@ fun LocationScreen(
                 }
             }
         }
+        }
 
         // ==================== 卡片 2：常驻注入控制 ====================
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    "常驻注入控制",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.height(12.dp))
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        "常驻注入控制",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(12.dp))
 
-                if (injectionState.isRunning) {
-                    Surface(
-                        color = Color(0xFF2EA44F).copy(alpha = 0.12f),
-                        shape = MaterialTheme.shapes.small,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                    // 独立局部计数组件，仅此子组件每 500ms 重组，外层零重组
+                    RunningInjectionBanner()
+
+                    if (lastError != null) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            shape = MaterialTheme.shapes.small,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF2EA44F))
+                            Text(
+                                "注入异常: $lastError",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.padding(10.dp)
                             )
-                            Spacer(Modifier.width(10.dp))
-                            Column {
-                                Text(
-                                    "正在常驻注入中（微信/高德生效中）",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2EA44F)
-                                )
-                                Text(
-                                    "目标 WGS: %.6f, %.6f · 连续注入 %d 次".format(
-                                        injectionState.lat,
-                                        injectionState.lng,
-                                        injectionState.count
-                                    ),
-                                    style = MonoStyle,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                        }
+                        Spacer(Modifier.height(12.dp))
+                    }
+
+                    Button(
+                        onClick = {
+                            if (!AdbManager.isConnected()) {
+                                Toast.makeText(context, "ADB 尚未连接，请先在「无线ADB」页连接或配对", Toast.LENGTH_LONG).show()
+                                return@Button
                             }
-                        }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                }
-
-                if (injectionState.error != null) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.errorContainer,
-                        shape = MaterialTheme.shapes.small,
-                        modifier = Modifier.fillMaxWidth()
+                            val interval = intervalText.toLongOrNull() ?: 500L
+                            val acc = accuracyText.toFloatOrNull() ?: 3f
+                            BootReceiver.rememberPoint(context, wgsLat, wgsLng)
+                            InjectionForegroundService.start(context, wgsLat, wgsLng, interval, acc)
+                            Toast.makeText(context, "已启动前台常驻注入！", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        enabled = !isRunning,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text(
-                            "注入异常: ${injectionState.error}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.padding(10.dp)
-                        )
+                        Icon(Icons.Default.PlayArrow, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("▶ 开始常驻注入 (保持有效)")
                     }
-                    Spacer(Modifier.height(12.dp))
-                }
 
-                Button(
-                    onClick = {
-                        if (!AdbManager.isConnected()) {
-                            Toast.makeText(context, "ADB 尚未连接，请先在「无线ADB」页连接或配对", Toast.LENGTH_LONG).show()
-                            return@Button
-                        }
-                        val interval = intervalText.toLongOrNull() ?: 500L
-                        val acc = accuracyText.toFloatOrNull() ?: 3f
-                        BootReceiver.rememberPoint(context, wgsLat, wgsLng)
-                        InjectionForegroundService.start(context, wgsLat, wgsLng, interval, acc)
-                        Toast.makeText(context, "已启动前台常驻注入！", Toast.LENGTH_SHORT).show()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    enabled = !injectionState.isRunning,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("▶ 开始常驻注入 (保持有效)")
-                }
+                    Spacer(Modifier.height(10.dp))
 
-                Spacer(Modifier.height(10.dp))
-
-                OutlinedButton(
-                    onClick = {
-                        InjectionForegroundService.stop(context)
-                        Toast.makeText(context, "已停止注入，正在还原真实定位", Toast.LENGTH_SHORT).show()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    enabled = injectionState.isRunning,
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFCF222E))
-                ) {
-                    Icon(Icons.Default.Stop, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("■ 停止注入并恢复真实定位")
+                    OutlinedButton(
+                        onClick = {
+                            InjectionForegroundService.stop(context)
+                            Toast.makeText(context, "已停止注入，正在还原真实定位", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        enabled = isRunning,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFCF222E))
+                    ) {
+                        Icon(Icons.Default.Stop, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("■ 停止注入并恢复真实定位")
+                    }
                 }
             }
         }
 
         // ==================== 卡片 3：常用地址库（快速选择） ====================
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Bookmarks,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Bookmarks,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "常用地址库 (点击快速填入)",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                         Text(
-                            "常用地址库 (点击快速填入)",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            "${savedLocations.size} 个",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Text(
-                        "${savedLocations.size} 个",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
 
-                Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(10.dp))
 
-                if (savedLocations.isEmpty()) {
-                    Text(
-                        "暂无保存的地址，可点击上方「另存为常用」添加常用地址",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    savedLocations.forEach { loc ->
-                        SavedLocationItem(
-                            item = loc,
-                            onSelect = {
-                                latText = it.lat.toString()
-                                lngText = it.lng.toString()
-                                selectedCoordSystem = it.coordSystem
-                                Toast.makeText(context, "已选择地址: ${it.name}", Toast.LENGTH_SHORT).show()
-                            },
-                            onDelete = {
-                                SavedLocationManager.deleteLocation(it.id)
-                                Toast.makeText(context, "已删除: ${it.name}", Toast.LENGTH_SHORT).show()
-                            }
+                    if (savedLocations.isEmpty()) {
+                        Text(
+                            "暂无保存的地址，可点击上方「另存为常用」添加常用地址",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    } else {
+                        savedLocations.forEach { loc ->
+                            SavedLocationItem(
+                                item = loc,
+                                onSelect = {
+                                    latText = it.lat.toString()
+                                    lngText = it.lng.toString()
+                                    selectedCoordSystem = it.coordSystem
+                                    Toast.makeText(context, "已选择地址: ${it.name}", Toast.LENGTH_SHORT).show()
+                                },
+                                onDelete = {
+                                    SavedLocationManager.deleteLocation(it.id)
+                                    Toast.makeText(context, "已删除: ${it.name}", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        }
                     }
                 }
             }
@@ -539,4 +507,52 @@ private fun SavedLocationItem(
             }
         }
     }
+}
+
+/**
+ * 独立的常驻注入状态条组件
+ * 核心优化：仅该局部微组件收集高频的 injectCount，
+ * 彻底消除 500ms 一次的全局页面重组与重新测量，保障滑动手势极致流畅。
+ */
+@Composable
+private fun RunningInjectionBanner() {
+    val isRunning by InjectionForegroundService.isRunning.collectAsState()
+    if (!isRunning) return
+
+    val count by InjectionForegroundService.injectCount.collectAsState()
+    val lat by InjectionForegroundService.targetLat.collectAsState()
+    val lng by InjectionForegroundService.targetLng.collectAsState()
+
+    Surface(
+        color = Color(0xFF2EA44F).copy(alpha = 0.12f),
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF2EA44F))
+            )
+            Spacer(Modifier.width(10.dp))
+            Column {
+                Text(
+                    "正在常驻注入中（微信/高德生效中）",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2EA44F)
+                )
+                Text(
+                    "目标 WGS: %.6f, %.6f · 连续注入 %d 次".format(lat, lng, count),
+                    style = MonoStyle,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+    Spacer(Modifier.height(12.dp))
 }
