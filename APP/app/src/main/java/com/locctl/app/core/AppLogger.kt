@@ -77,8 +77,10 @@ object AppLogger {
         runCatching { logFile?.delete() }
     }
 
-    fun getFormattedLogs(): String {
-        return _logs.value.joinToString("\n") { "[${it.time}] [${it.level.name}] [${it.tag}] ${it.message}" }
+    fun getFormattedLogs(maxCount: Int = 100): String {
+        val list = _logs.value.takeLast(maxCount)
+        val text = list.joinToString("\n") { "[${it.time}] [${it.level.name}] [${it.tag}] ${it.message}" }
+        return if (text.length > 500_000) text.takeLast(500_000) else text
     }
 }
 

@@ -19,6 +19,7 @@ class LocctlApp : Application() {
         super.onCreate()
         instance = this
         com.locctl.app.core.AppLogger.init(this)
+        com.locctl.app.core.SavedLocationManager.init(this)
         AdbManager.init(this)
     }
 

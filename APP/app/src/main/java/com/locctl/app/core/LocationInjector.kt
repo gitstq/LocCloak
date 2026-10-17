@@ -33,12 +33,15 @@ class LocationInjector(private val adbManager: AdbManager = AdbManager) {
             append("cmd location providers remove-test-provider network 2>/dev/null; ")
             append("cmd location providers add-test-provider network --requiresNetwork --requiresCell --supportsAltitude --supportsSpeed --supportsBearing; ")
             append("cmd location providers set-test-provider-enabled network true; ")
+            append("settings put global wifi_scan_always_enabled 0 2>/dev/null; ")
+            append("cmd appops set com.tencent.mm android:wifi_scan ignore 2>/dev/null; ")
+            append("cmd appops set com.tencent.mm android:nearby_wifi_devices ignore 2>/dev/null; ")
             append("cmd location providers remove-test-provider fused 2>/dev/null; ")
             append("cmd location providers add-test-provider fused; ")
             append("cmd location providers set-test-provider-enabled fused true")
         }
         adbManager.execute(cmd)
-        AppLogger.i(TAG, "已成功接管系统的 gps, network, fused 三大定位源")
+        AppLogger.i(TAG, "已成功接管系统的 gps, network, fused 三大定位源，并屏蔽微信后台 Wi-Fi 逆向嗅探")
     }
 
     /**
@@ -60,7 +63,10 @@ class LocationInjector(private val adbManager: AdbManager = AdbManager) {
         AppLogger.i(TAG, "正在移除系统测试提供商，还原真实定位...")
         val cmd = "cmd location providers remove-test-provider gps 2>/dev/null; " +
                   "cmd location providers remove-test-provider network 2>/dev/null; " +
-                  "cmd location providers remove-test-provider fused 2>/dev/null"
+                  "cmd location providers remove-test-provider fused 2>/dev/null; " +
+                  "settings put global wifi_scan_always_enabled 1 2>/dev/null; " +
+                  "cmd appops set com.tencent.mm android:wifi_scan allow 2>/dev/null; " +
+                  "cmd appops set com.tencent.mm android:nearby_wifi_devices allow 2>/dev/null"
         runCatching { adbManager.execute(cmd) }
         AppLogger.i(TAG, "真实定位已完全恢复")
     }
