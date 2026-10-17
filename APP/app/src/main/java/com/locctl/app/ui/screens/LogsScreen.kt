@@ -108,29 +108,43 @@ fun LogsScreen() {
                         }
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        IconButton(
-                            onClick = {
-                                val text = AppLogger.getFormattedLogs()
-                                clipboardManager.setText(AnnotatedString(text))
-                                Toast.makeText(context, "日志已复制到剪贴板", Toast.LENGTH_SHORT).show()
-                            }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(36.dp)
                         ) {
-                            Icon(FeatherIcons.Copy, contentDescription = "复制日志", modifier = Modifier.size(18.dp))
+                            IconButton(
+                                onClick = {
+                                    val text = AppLogger.getFormattedLogs()
+                                    clipboardManager.setText(AnnotatedString(text))
+                                    Toast.makeText(context, "日志已复制到剪贴板", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Icon(FeatherIcons.Copy, contentDescription = "复制日志", modifier = Modifier.size(16.dp))
+                            }
                         }
 
-                        IconButton(
-                            onClick = {
-                                AppLogger.clear()
-                                Toast.makeText(context, "日志已清空", Toast.LENGTH_SHORT).show()
-                            }
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f),
+                            modifier = Modifier.size(36.dp)
                         ) {
-                            Icon(
-                                FeatherIcons.Trash2,
-                                contentDescription = "清空日志",
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(18.dp)
-                            )
+                            IconButton(
+                                onClick = {
+                                    AppLogger.clear()
+                                    Toast.makeText(context, "日志已清空", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Icon(
+                                    FeatherIcons.Trash2,
+                                    contentDescription = "清空日志",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -164,31 +178,31 @@ fun LogsScreen() {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         FilterChip(
                             selected = selectedLevel == null,
                             onClick = { selectedLevel = null },
-                            shape = RoundedCornerShape(8.dp),
+                            shape = CircleShape,
                             label = { Text("全部", fontSize = 11.sp) }
                         )
                         FilterChip(
                             selected = selectedLevel == LogLevel.INFO,
                             onClick = { selectedLevel = if (selectedLevel == LogLevel.INFO) null else LogLevel.INFO },
-                            shape = RoundedCornerShape(8.dp),
+                            shape = CircleShape,
                             label = { Text("INFO", fontSize = 11.sp) }
                         )
                         FilterChip(
                             selected = selectedLevel == LogLevel.DEBUG,
                             onClick = { selectedLevel = if (selectedLevel == LogLevel.DEBUG) null else LogLevel.DEBUG },
-                            shape = RoundedCornerShape(8.dp),
+                            shape = CircleShape,
                             label = { Text("DEBUG", fontSize = 11.sp) }
                         )
                         FilterChip(
                             selected = selectedLevel == LogLevel.ERROR,
                             onClick = { selectedLevel = if (selectedLevel == LogLevel.ERROR) null else LogLevel.ERROR },
-                            shape = RoundedCornerShape(8.dp),
+                            shape = CircleShape,
                             label = { Text("ERROR", fontSize = 11.sp) }
                         )
                     }

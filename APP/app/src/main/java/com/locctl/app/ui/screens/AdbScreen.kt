@@ -367,15 +367,14 @@ fun AdbScreen() {
                     Spacer(Modifier.height(10.dp))
 
                     Text(
-                        "★ 微信/高德测试关键步骤：",
+                        "★ 软件测试关键步骤：",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        "1. 测试前请在下拉状态栏关闭 Wi-Fi 开关（使用移动数据），避免真实路由器 MAC 泄露给腾讯服务器。\n" +
-                        "2. 划掉杀死微信后台，重新打开微信进入【发送位置】页面。\n" +
-                        "3. 在地图界面停留 5~8 秒，让腾讯地图完成底图与定位点加载刷新。",
+                        "1. 划掉杀死微信后台，重新打开微信进入【发送位置】页面。\n" +
+                        "2. 在地图界面停留 5~8 秒，让腾讯地图完成底图与定位点加载刷新。",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 19.sp

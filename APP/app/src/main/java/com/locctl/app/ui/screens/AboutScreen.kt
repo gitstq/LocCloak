@@ -173,7 +173,7 @@ fun AboutScreen() {
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Button(
                             onClick = {
@@ -185,7 +185,7 @@ fun AboutScreen() {
                                 }
                             },
                             enabled = !isCheckingUpdate,
-                            shape = RoundedCornerShape(12.dp),
+                            shape = CircleShape,
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(FeatherIcons.RefreshCw, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -195,7 +195,7 @@ fun AboutScreen() {
 
                         OutlinedButton(
                             onClick = { showChangelogDialog = true },
-                            shape = RoundedCornerShape(12.dp),
+                            shape = CircleShape,
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(FeatherIcons.FileText, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -381,7 +381,7 @@ fun AboutScreen() {
             confirmButton = {
                 Button(
                     onClick = { showUpdateDialog = false },
-                    shape = RoundedCornerShape(10.dp)
+                    shape = CircleShape
                 ) {
                     Text("确定")
                 }
@@ -427,7 +427,7 @@ fun AboutScreen() {
             confirmButton = {
                 Button(
                     onClick = { showChangelogDialog = false },
-                    shape = RoundedCornerShape(10.dp)
+                    shape = CircleShape
                 ) {
                     Text("关闭")
                 }
@@ -440,7 +440,7 @@ fun AboutScreen() {
 @Composable
 private fun ModernFeatureBadge(text: String, icon: ImageVector) {
     Surface(
-        shape = RoundedCornerShape(8.dp),
+        shape = CircleShape,
         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f))
     ) {
