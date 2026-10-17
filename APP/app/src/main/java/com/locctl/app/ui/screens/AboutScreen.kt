@@ -23,7 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,6 +41,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AboutScreen() {
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
     val currentVersion = BuildConfig.VERSION_NAME
 
@@ -124,7 +127,100 @@ fun AboutScreen() {
             }
         }
 
-        // ==================== 卡片 2：版本更新与检查 ====================
+        // ==================== 卡片 2：开发者与开源支持 Bento ====================
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    FeatherIcons.User,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            "开发者与开源信息",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    // 微信
+                    ContactInfoItem(
+                        icon = FeatherIcons.MessageCircle,
+                        iconColor = Color(0xFF07C160),
+                        label = "开发 · 微信 (WeChat)",
+                        value = "pOVOq-521",
+                        actionText = "复制微信",
+                        onAction = {
+                            clipboardManager.setText(AnnotatedString("pOVOq-521"))
+                            Toast.makeText(context, "微信号 pOVOq-521 已复制到剪贴板", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 6.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+                    )
+
+                    // QQ
+                    ContactInfoItem(
+                        icon = FeatherIcons.Send,
+                        iconColor = Color(0xFF12B7F5),
+                        label = "交流 · QQ",
+                        value = "2697905019",
+                        actionText = "复制QQ",
+                        onAction = {
+                            clipboardManager.setText(AnnotatedString("2697905019"))
+                            Toast.makeText(context, "QQ 号 2697905019 已复制到剪贴板", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 6.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+                    )
+
+                    // GitHub
+                    ContactInfoItem(
+                        icon = FeatherIcons.Github,
+                        iconColor = MaterialTheme.colorScheme.onSurface,
+                        label = "GitHub 开源仓库",
+                        value = "https://github.com/gitstq/locctl",
+                        actionText = "访问项目",
+                        onAction = {
+                            runCatching {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/gitstq/locctl")).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                            }.onFailure {
+                                clipboardManager.setText(AnnotatedString("https://github.com/gitstq/locctl"))
+                                Toast.makeText(context, "GitHub 链接已复制到剪贴板", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        // ==================== 卡片 3：版本更新与检查 ====================
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -702,4 +798,66 @@ private fun ModernSettingEntry(icon: ImageVector, title: String, desc: String, o
         )
     }
 }
+
+@Composable
+private fun ContactInfoItem(
+    icon: ImageVector,
+    iconColor: Color,
+    label: String,
+    value: String,
+    actionText: String,
+    onAction: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onAction)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = iconColor.copy(alpha = 0.12f),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(18.dp))
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp
+                )
+                Text(
+                    value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+
+        Spacer(Modifier.width(8.dp))
+
+        OutlinedButton(
+            onClick = onAction,
+            shape = CircleShape,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
+            modifier = Modifier.height(32.dp)
+        ) {
+            Text(actionText, style = MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+
 
