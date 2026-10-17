@@ -1,6 +1,6 @@
 {
   "name": "loccloak",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "隐影斗篷 (LocCloak) - Android 虚拟定位控制工具：内置官方 ADB、免选模拟应用、防检测、坐标系统一换算、高德在线选点、GPX 轨迹回放",
   "type": "commonjs",
   "bin": {

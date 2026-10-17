@@ -43,9 +43,10 @@ execSync(compressCmd, { cwd: ROOT_DIR, stdio: 'inherit' });
 const zipStat = fs.statSync(tempZip);
 console.log(`  -> 核心套件已压缩: ${(zipStat.size / (1024 * 1024)).toFixed(2)} MB`);
 
-// 3. 将 bundle.zip 嵌入编译为真正的单文件独立版 dist/LocCloak-v2.0.0-windows-x64.exe
-console.log('\n[3/3] 编译自包含单文件独立版 dist/LocCloak-v2.0.0-windows-x64.exe...');
-const outSingleExe = path.join(DIST_DIR, 'LocCloak-v2.0.0-windows-x64.exe');
+// 3. 将 bundle.zip 嵌入编译为真正的单文件独立版
+const pkg = require('../package.json');
+console.log(`\n[3/3] 编译自包含单文件独立版 dist/LocCloak-v${pkg.version}-windows-x64.exe...`);
+const outSingleExe = path.join(DIST_DIR, `LocCloak-v${pkg.version}-windows-x64.exe`);
 const outCloakAlias = path.join(DIST_DIR, '隐影斗篷-便携单文件版.exe');
 const outDesktopAlias = path.join(DIST_DIR, 'locctl-desktop-windows-x64.exe');
 
@@ -59,10 +60,10 @@ fs.copyFileSync(outSingleExe, outDesktopAlias);
 try { fs.unlinkSync(tempZip); } catch {}
 
 const singleStat = fs.statSync(outSingleExe);
-console.log(`  -> 成功生成单文件独立版: dist/LocCloak-v2.0.0-windows-x64.exe (${(singleStat.size / (1024 * 1024)).toFixed(2)} MB)`);
+console.log(`  -> 成功生成单文件独立版: dist/LocCloak-v${pkg.version}-windows-x64.exe (${(singleStat.size / (1024 * 1024)).toFixed(2)} MB)`);
 
 console.log('\n==========================================');
 console.log('  全部构建完成！已提供两种形态：');
 console.log('  1. 根目录直接运行: 隐影斗篷.exe / LocCloak.exe (当前文件夹双击即开，0秒启动)');
-console.log('  2. 单文件独立发行版: dist/LocCloak-v2.0.0-windows-x64.exe (便携独立单文件)');
+console.log(`  2. 单文件独立发行版: dist/LocCloak-v${pkg.version}-windows-x64.exe (便携独立单文件)`);
 console.log('==========================================');
