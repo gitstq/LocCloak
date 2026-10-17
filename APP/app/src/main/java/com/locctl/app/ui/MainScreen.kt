@@ -39,6 +39,13 @@ import com.locctl.app.update.UpdateCheckResult
 import com.locctl.app.update.UpdateInfo
 import com.locctl.app.update.UpdateManager
 import compose.icons.feathericons.Download
+import compose.icons.feathericons.MoreVertical
+import compose.icons.feathericons.Moon
+import compose.icons.feathericons.Sun
+import compose.icons.feathericons.Check
+import androidx.compose.ui.draw.scale
+import com.locctl.app.ui.theme.ThemeManager
+import com.locctl.app.ui.theme.ThemeMode
 import kotlinx.coroutines.delay
 
 enum class AppTab(
@@ -92,7 +99,13 @@ fun MainScreen(
                     }
                 },
                 actions = {
-                    InjectionTopStatusBadge()
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(end = 6.dp)
+                    ) {
+                        InjectionTopStatusBadge()
+                        TopAppBarOptionsMenu()
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -295,7 +308,7 @@ private fun InjectionTopStatusBadge() {
     Surface(
         shape = CircleShape,
         color = if (isRunning) Color(0xFF2EA44F).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier.padding(end = 12.dp)
+        modifier = Modifier.padding(end = 2.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -315,6 +328,114 @@ private fun InjectionTopStatusBadge() {
                 color = if (isRunning) Color(0xFF2EA44F) else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp
             )
+        }
+    }
+}
+
+@Composable
+private fun TopAppBarOptionsMenu() {
+    val context = LocalContext.current
+    var expanded by remember { mutableStateOf(false) }
+    val currentThemeMode by ThemeManager.themeMode.collectAsState()
+    val isDark = ThemeManager.isDark(currentThemeMode)
+
+    Box {
+        IconButton(
+            onClick = { expanded = true },
+            modifier = Modifier.size(36.dp)
+        ) {
+            Icon(
+                FeatherIcons.MoreVertical,
+                contentDescription = "更多选项",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.widthIn(min = 210.dp)
+        ) {
+            // 1. 深色模式开关项
+            DropdownMenuItem(
+                text = {
+                    Column {
+                        Text(
+                            "深色模式",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            when (currentThemeMode) {
+                                ThemeMode.DARK -> "已开启深色"
+                                ThemeMode.LIGHT -> "已开启浅色"
+                                ThemeMode.SYSTEM -> "跟随系统设置"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 11.sp
+                        )
+                    }
+                },
+                leadingIcon = {
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isDark) MaterialTheme.colorScheme.primaryContainer else Color(0xFFF59E0B).copy(alpha = 0.15f),
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                if (isDark) FeatherIcons.Moon else FeatherIcons.Sun,
+                                contentDescription = null,
+                                tint = if (isDark) MaterialTheme.colorScheme.primary else Color(0xFFF59E0B),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                },
+                trailingIcon = {
+                    Switch(
+                        checked = isDark,
+                        onCheckedChange = { checked ->
+                            ThemeManager.setMode(context, if (checked) ThemeMode.DARK else ThemeMode.LIGHT)
+                            expanded = false
+                        },
+                        modifier = Modifier.scale(0.8f)
+                    )
+                },
+                onClick = {
+                    ThemeManager.toggleDarkMode(context, isDark)
+                    expanded = false
+                }
+            )
+
+            // 2. 跟随系统选项
+            if (currentThemeMode != ThemeMode.SYSTEM) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            "恢复跟随系统",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            FeatherIcons.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    },
+                    onClick = {
+                        ThemeManager.setMode(context, ThemeMode.SYSTEM)
+                        expanded = false
+                    }
+                )
+            }
         }
     }
 }
