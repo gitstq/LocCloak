@@ -39,8 +39,8 @@ Node 18+  ·  内置 ADB（免准备）  ·  USB 调试已开启  ·  无需 roo
 2. **单文件便携独立版（可随意移动、发送给他人）**：
    - 位于 **`dist/locctl-v2.0.0-windows-x64.exe`**（约 35MB）。
    - 单个文件内嵌全部运行环境、内置 ADB 与前端界面，拷贝到任何没有开发环境的全新 Windows 电脑上双击即可直接运行！
-3. **命令行 / 脚本启动**：
-   - 双击 `启动UI.bat`，或在终端输入 `npm run ui` / `node bin/locctl.js ui`。
+3. **命令行开发者调试**：
+   - 在终端直接运行 `npm run ui` 或 `node bin/locctl.js ui`。
 
 ---
 
