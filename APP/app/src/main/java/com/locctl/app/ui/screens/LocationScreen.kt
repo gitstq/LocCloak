@@ -57,6 +57,9 @@ fun LocationScreen(
     var showSaveDialog by remember { mutableStateOf(false) }
     var saveNameText by remember { mutableStateOf("") }
 
+    // 高德地图在线选点弹窗状态
+    var showAmapPicker by remember { mutableStateOf(false) }
+
     // 实时经纬度解析与 WGS-84 换算
     val parsedLat = latText.toDoubleOrNull() ?: 0.0
     val parsedLng = lngText.toDoubleOrNull() ?: 0.0
@@ -118,6 +121,27 @@ fun LocationScreen(
                             Spacer(Modifier.width(6.dp))
                             Text("另存为常用", style = MaterialTheme.typography.labelMedium)
                         }
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    // 高德地图在线选点入口按钮
+                    Button(
+                        onClick = { showAmapPicker = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        contentPadding = PaddingValues(vertical = 12.dp)
+                    ) {
+                        Icon(FeatherIcons.MapPin, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "高德地图在线选点",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.labelLarge
+                        )
                     }
 
                     Spacer(Modifier.height(14.dp))
@@ -539,6 +563,22 @@ fun LocationScreen(
                 ) {
                     Text("取消")
                 }
+            }
+        )
+    }
+
+    // 高德地图在线选点弹窗
+    if (showAmapPicker) {
+        AmapPickerModal(
+            initialLat = parsedLat.takeIf { it != 0.0 } ?: 30.274602,
+            initialLng = parsedLng.takeIf { it != 0.0 } ?: 120.211963,
+            initialCoordSystem = selectedCoordSystem,
+            onDismissRequest = { showAmapPicker = false },
+            onLocationSelected = { pickedLat, pickedLng, address ->
+                latText = "%.6f".format(pickedLat)
+                lngText = "%.6f".format(pickedLng)
+                selectedCoordSystem = "gcj02"
+                Toast.makeText(context, "已选用目标位置: $address", Toast.LENGTH_SHORT).show()
             }
         )
     }

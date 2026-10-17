@@ -22,3 +22,10 @@
 # Kotlin Coroutines and Compose
 -dontwarn kotlinx.coroutines.**
 -dontwarn androidx.compose.**
+
+# WebView JavaScript Interface
+-keepattributes *Annotation*
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+

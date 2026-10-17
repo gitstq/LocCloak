@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>高德地图选点</title>
+  <link rel="stylesheet" href="leaflet/leaflet.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    html, body, #map-container {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #f0f2f5;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+    /* 屏蔽 Leaflet 默认属性水印 */
+    .leaflet-control-attribution {
+      display: none !important;
+    }
+
+    /* 屏幕正中心固定瞄准图钉 */
+    #center-pin-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      pointer-events: none;
+      z-index: 1000;
+      transform: translate(-50%, -100%);
+      transition: transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #center-pin-container.moving {
+      transform: translate(-50%, -115%) scale(1.08);
+    }
+    .pin-shadow {
+      position: absolute;
+      bottom: -4px;
+      left: 50%;
+      width: 12px;
+      height: 5px;
+      margin-left: -6px;
+      background: rgba(0, 0, 0, 0.28);
+      border-radius: 50%;
+      filter: blur(1.5px);
+      transition: transform 0.18s ease;
+    }
+    #center-pin-container.moving .pin-shadow {
+      transform: scale(0.65);
+      opacity: 0.5;
+    }
+    .pin-svg {
+      width: 38px;
+      height: 48px;
+      display: block;
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.35));
+    }
+  </style>
+</head>
+<body>
+  <div id="map-container">
+    <div id="map"></div>
+    <div id="center-pin-container">
+      <div class="pin-shadow"></div>
+      <svg class="pin-svg" viewBox="0 0 38 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 0C8.50659 0 0 8.50659 0 19C0 32.25 17.1 46.8 17.86 47.45C18.2 47.74 18.6 47.88 19 47.88C19.4 47.88 19.8 47.74 20.14 47.45C20.9 46.8 38 32.25 38 19C38 8.50659 29.4934 0 19 0Z" fill="#2563EB"/>
+        <circle cx="19" cy="18" r="8" fill="#FFFFFF"/>
+        <circle cx="19" cy="18" r="4.2" fill="#1D4ED8"/>
+      </svg>
+    </div>
+  </div>
+
+  <script src="leaflet/leaflet.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      // 修复 Leaflet 默认 icon 路径
+      if (typeof L !== 'undefined' && L.Icon && L.Icon.Default) {
+        delete L.Icon.Default.prototype._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'leaflet/images/marker-icon-2x.png',
+          iconUrl: 'leaflet/images/marker-icon.png',
+          shadowUrl: 'leaflet/images/marker-shadow.png',
+          imagePath: 'leaflet/images/',
+        });
+      }
+
+      var map = null;
+      var baseLayers = {};
+      var currentLayerName = 'vec';
+      var centerPin = document.getElementById('center-pin-container');
+      var isProgrammaticMove = false;
+
+      // 初始化地图
+      function initMap(initialLat, initialLng, initialZoom) {
+        var lat = initialLat || 30.274602;
+        var lng = initialLng || 120.211963;
+        var zoom = initialZoom || 16;
+
+        map = L.map('map', {
+          zoomControl: false,
+          attributionControl: false,
+          inertia: true,
+          inertiaDeceleration: 3000,
+          maxZoom: 18,
+          minZoom: 3
+        }).setView([lat, lng], zoom);
+
+        // 高德官方矢量切片图层 (GCJ-02 对齐)
+        baseLayers['vec'] = L.tileLayer(
+          'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
+          { subdomains: ['1', '2', '3', '4'], maxZoom: 18 }
+        );
+
+        // 高德官方卫星实景图层
+        var satImg = L.tileLayer(
+          'https://webst0{s}.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}',
+          { subdomains: ['1', '2', '3', '4'], maxZoom: 18 }
+        );
+        // 高德卫星注记路网图层
+        var satRoad = L.tileLayer(
+          'https://wprd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}',
+          { subdomains: ['1', '2', '3', '4'], maxZoom: 18 }
+        );
+        baseLayers['img'] = L.layerGroup([satImg, satRoad]);
+
+        // 默认加载矢量底图
+        baseLayers['vec'].addTo(map);
+
+        // 绑定交互事件
+        map.on('movestart', function () {
+          if (centerPin) centerPin.classList.add('moving');
+        });
+
+        map.on('moveend', function () {
+          if (centerPin) centerPin.classList.remove('moving');
+          notifyLocation();
+        });
+
+        // 点击地图任意位置平移中心点
+        map.on('click', function (e) {
+          map.panTo(e.latlng, { animate: true });
+        });
+
+        // 初始触发一次通知
+        notifyLocation();
+      }
+
+      function notifyLocation() {
+        if (!map) return;
+        var center = map.getCenter();
+        var lat = center.lat;
+        var lng = center.lng;
+        if (window.AmapBridge && typeof window.AmapBridge.onLocationChanged === 'function') {
+          window.AmapBridge.onLocationChanged(lat, lng);
+        }
+      }
+
+      // 暴露给 Android 原生调用的 JS 函数
+      window.moveToLocation = function (lat, lng, zoom) {
+        if (!map) return;
+        isProgrammaticMove = true;
+        map.setView([lat, lng], zoom || map.getZoom(), { animate: true });
+        setTimeout(function () {
+          isProgrammaticMove = false;
+        }, 300);
+      };
+
+      window.setMapLayer = function (type) {
+        if (!map || type === currentLayerName) return;
+        if (baseLayers[currentLayerName]) {
+          map.removeLayer(baseLayers[currentLayerName]);
+        }
+        if (baseLayers[type]) {
+          baseLayers[type].addTo(map);
+          currentLayerName = type;
+        }
+      };
+
+      window.zoomIn = function () {
+        if (map) map.zoomIn();
+      };
+
+      window.zoomOut = function () {
+        if (map) map.zoomOut();
+      };
+
+      // 监听外部注入启动
+      window.initAmap = function (lat, lng, zoom) {
+        initMap(lat, lng, zoom);
+      };
+
+      // 页面加载完毕通知 Android
+      window.addEventListener('DOMContentLoaded', function () {
+        if (window.AmapBridge && typeof window.AmapBridge.onMapReady === 'function') {
+          window.AmapBridge.onMapReady();
+        } else {
+          // 独立浏览器直接测试启动
+          initMap(30.274602, 120.211963, 16);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
+
