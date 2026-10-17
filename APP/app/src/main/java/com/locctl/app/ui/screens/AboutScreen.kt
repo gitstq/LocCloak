@@ -7,27 +7,32 @@ import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import compose.icons.FeatherIcons
+import compose.icons.feathericons.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AboutScreen() {
     val context = LocalContext.current
@@ -38,86 +43,113 @@ fun AboutScreen() {
     var showChangelogDialog by remember { mutableStateOf(false) }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // ==================== 卡片 1：应用基础信息 ====================
+        // ==================== 卡片 1：应用基础信息 Bento ====================
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(64.dp)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(22.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.Place,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(36.dp)
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                        modifier = Modifier.size(68.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                FeatherIcons.Navigation,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(34.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    Text(
+                        "WX定位 · Locctl",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+
+                    Spacer(Modifier.height(4.dp))
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    ) {
+                        Text(
+                            "版本 v1.0.0 (Release) · Android 12 ~ 16",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
                         )
                     }
-                }
 
-                Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(14.dp))
 
-                Text(
-                    "WX定位 · Locctl",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(Modifier.height(4.dp))
-
-                Text(
-                    "版本 v1.0.0 (Release) · Android 12 ~ 16",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(Modifier.height(12.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FeatureBadge("零外部依赖")
-                    FeatureBadge("免选模拟应用")
-                    FeatureBadge("纯原生架构")
-                    FeatureBadge("防Wi-Fi嗅探")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            ModernFeatureBadge("零外部依赖", FeatherIcons.Zap)
+                            ModernFeatureBadge("免选模拟应用", FeatherIcons.CheckCircle)
+                            ModernFeatureBadge("纯原生架构", FeatherIcons.Shield)
+                            ModernFeatureBadge("防嗅探伪装", FeatherIcons.Lock)
+                        }
+                    }
                 }
             }
-        }
         }
 
         // ==================== 卡片 2：版本更新与检查 ====================
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(18.dp)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.SystemUpdate,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        FeatherIcons.RefreshCw,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.width(10.dp))
                             Text(
                                 "版本管理与更新",
                                 style = MaterialTheme.typography.titleMedium,
@@ -132,7 +164,7 @@ fun AboutScreen() {
 
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        "当前已安装版本: v1.0.0 · 编译类型: Debug/Release",
+                        "当前编译架构: 纯 Kotlin/Jetpack Compose 原生 · 无 Node.js 冗余",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -153,18 +185,20 @@ fun AboutScreen() {
                                 }
                             },
                             enabled = !isCheckingUpdate,
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(FeatherIcons.RefreshCw, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
                             Text("检查更新")
                         }
 
                         OutlinedButton(
                             onClick = { showChangelogDialog = true },
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.ListAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(FeatherIcons.FileText, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
                             Text("更新日志")
                         }
@@ -177,17 +211,27 @@ fun AboutScreen() {
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(18.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Shield,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF2EA44F).copy(alpha = 0.15f),
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    FeatherIcons.Shield,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2EA44F),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(10.dp))
                         Text(
                             "用户权益与安全承诺",
                             style = MaterialTheme.typography.titleMedium,
@@ -195,19 +239,26 @@ fun AboutScreen() {
                         )
                     }
 
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(14.dp))
 
-                    RightsItem(
+                    ModernRightsItem(
+                        icon = FeatherIcons.Lock,
                         title = "100% 纯本地运行 · 零云端隐私上传",
-                        desc = "本工具所有经纬度解析、本地 ADB 协议握手与命令交互全部在手机系统内闭环运行（127.0.0.1 环回），不设任何外部数据收集上报接口，绝不上报位置数据。"
+                        desc = "本工具所有经纬度解析、本地 ADB 协议握手与命令交互全部在手机系统内闭环运行（127.0.0.1 环回），不设任何外部数据上报接口，绝不上报位置数据。"
                     )
 
-                    RightsItem(
+                    Spacer(Modifier.height(10.dp))
+
+                    ModernRightsItem(
+                        icon = FeatherIcons.Zap,
                         title = "零 Root 破坏 · 系统无痕还原",
-                        desc = "无需对手机进行解锁 Bootloader 或获取 Root 权限，停止常驻注入后立即原子级移除测试提供程序，秒级恢复手机原有真实物理定位。"
+                        desc = "无需解锁 Bootloader 或获取 Root 权限，停止常驻注入后立即原子级移除测试提供程序，秒级恢复手机原有真实物理定位与系统原装状态。"
                     )
 
-                    RightsItem(
+                    Spacer(Modifier.height(10.dp))
+
+                    ModernRightsItem(
+                        icon = FeatherIcons.CheckCircle,
                         title = "合规使用声明",
                         desc = "本软件仅供软件研发人员在开发调试、多终端自动化定位测试以及合规算法验证场景下使用。请遵守当地法律法规以及第三方服务协议规范。"
                     )
@@ -219,17 +270,27 @@ fun AboutScreen() {
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(18.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Tune,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    FeatherIcons.Sliders,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(10.dp))
                         Text(
                             "系统优化与常驻配置",
                             style = MaterialTheme.typography.titleMedium,
@@ -237,9 +298,10 @@ fun AboutScreen() {
                         )
                     }
 
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(14.dp))
 
-                    SettingEntryItem(
+                    ModernSettingEntry(
+                        icon = FeatherIcons.Battery,
                         title = "电池优化无限制白名单",
                         desc = "允许在后台持续稳定注入，防止切到微信时被系统电池管理休眠挂起。",
                         onClick = {
@@ -257,9 +319,13 @@ fun AboutScreen() {
                         }
                     )
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                    )
 
-                    SettingEntryItem(
+                    ModernSettingEntry(
+                        icon = FeatherIcons.Settings,
                         title = "应用详情与系统权限",
                         desc = "管理本 APP 的通知权限与存储配置。",
                         onClick = {
@@ -283,7 +349,19 @@ fun AboutScreen() {
     if (showUpdateDialog) {
         AlertDialog(
             onDismissRequest = { showUpdateDialog = false },
-            title = { Text("检查更新结果") },
+            shape = RoundedCornerShape(20.dp),
+            icon = {
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFF2EA44F).copy(alpha = 0.15f),
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(FeatherIcons.CheckCircle, contentDescription = null, tint = Color(0xFF2EA44F), modifier = Modifier.size(24.dp))
+                    }
+                }
+            },
+            title = { Text("检查更新结果", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     Text(
@@ -301,7 +379,10 @@ fun AboutScreen() {
                 }
             },
             confirmButton = {
-                Button(onClick = { showUpdateDialog = false }) {
+                Button(
+                    onClick = { showUpdateDialog = false },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
                     Text("确定")
                 }
             }
@@ -312,7 +393,19 @@ fun AboutScreen() {
     if (showChangelogDialog) {
         AlertDialog(
             onDismissRequest = { showChangelogDialog = false },
-            title = { Text("v1.0.0 重构版本更新日志") },
+            shape = RoundedCornerShape(20.dp),
+            icon = {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(FeatherIcons.FileText, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    }
+                }
+            },
+            title = { Text("v1.0.0 重构版本更新日志", fontWeight = FontWeight.Bold) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     Text(
@@ -332,7 +425,10 @@ fun AboutScreen() {
                 }
             },
             confirmButton = {
-                Button(onClick = { showChangelogDialog = false }) {
+                Button(
+                    onClick = { showChangelogDialog = false },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
                     Text("关闭")
                 }
             }
@@ -340,47 +436,93 @@ fun AboutScreen() {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun FeatureBadge(text: String) {
+private fun ModernFeatureBadge(text: String, icon: ImageVector) {
     Surface(
-        shape = MaterialTheme.shapes.extraSmall,
-        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f))
     ) {
-        Text(
-            text,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
-            fontSize = 11.sp
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(12.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
 
 @Composable
-private fun RightsItem(title: String, desc: String) {
-    Column(modifier = Modifier.padding(vertical = 4.dp)) {
-        Text(title, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(2.dp))
-        Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 18.sp)
+private fun ModernRightsItem(icon: ImageVector, title: String, desc: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top
+    ) {
+        Surface(
+            shape = RoundedCornerShape(6.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .size(24.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(13.dp))
+            }
+        }
+        Spacer(Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(2.dp))
+            Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 18.sp)
+        }
     }
 }
 
 @Composable
-private fun SettingEntryItem(title: String, desc: String, onClick: () -> Unit) {
+private fun ModernSettingEntry(icon: ImageVector, title: String, desc: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            modifier = Modifier.size(36.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+            }
+        }
+
+        Spacer(Modifier.width(12.dp))
+
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(2.dp))
             Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        TextButton(onClick = onClick) {
-            Text("前往设置")
-        }
+
+        Spacer(Modifier.width(8.dp))
+
+        Icon(
+            FeatherIcons.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            modifier = Modifier.size(18.dp)
+        )
     }
 }
+

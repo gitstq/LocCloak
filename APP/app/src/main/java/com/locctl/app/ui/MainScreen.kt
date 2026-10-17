@@ -21,15 +21,21 @@ import com.locctl.app.ui.screens.AdbScreen
 import com.locctl.app.ui.screens.LocationScreen
 import com.locctl.app.ui.screens.LogsScreen
 
+import compose.icons.FeatherIcons
+import compose.icons.feathericons.Wifi
+import compose.icons.feathericons.MapPin
+import compose.icons.feathericons.Terminal
+import compose.icons.feathericons.Info
+
 enum class AppTab(
     val title: String,
     val subtitle: String,
     val icon: ImageVector
 ) {
-    ADB("无线ADB", "状态与操作指南", Icons.Default.Wifi),
-    LOCATION("目标位置", "参数与常用地址", Icons.Default.Place),
-    LOGS("运行日志", "实时调试控制台", Icons.Default.Article),
-    ABOUT("关于更多", "检查更新与权益", Icons.Default.Info)
+    ADB("无线ADB", "状态与操作指南", FeatherIcons.Wifi),
+    LOCATION("目标位置", "参数与常用地址", FeatherIcons.MapPin),
+    LOGS("运行日志", "实时调试控制台", FeatherIcons.Terminal),
+    ABOUT("关于更多", "检查更新与权益", FeatherIcons.Info)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

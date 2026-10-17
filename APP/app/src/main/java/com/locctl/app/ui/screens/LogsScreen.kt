@@ -1,17 +1,19 @@
 package com.locctl.app.ui.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -22,6 +24,8 @@ import androidx.compose.ui.unit.sp
 import com.locctl.app.core.AppLogger
 import com.locctl.app.core.LogLevel
 import com.locctl.app.ui.theme.MonoStyle
+import compose.icons.FeatherIcons
+import compose.icons.feathericons.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,34 +59,49 @@ fun LogsScreen() {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // ==================== 顶部控制工具栏 ====================
         Card(
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            Column(modifier = Modifier.padding(12.dp)) {
+            Column(modifier = Modifier.padding(14.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Terminal, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.width(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    FeatherIcons.Terminal,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(10.dp))
                         Text(
-                            "实时系统与注入日志",
+                            "实时系统日志",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(8.dp))
                         Surface(
-                            shape = MaterialTheme.shapes.extraSmall,
+                            shape = RoundedCornerShape(8.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant
                         ) {
                             Text(
-                                "${filteredLogs.size} / ${logs.size}",
+                                "${filteredLogs.size}/${logs.size}",
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                 style = MaterialTheme.typography.labelSmall
                             )
@@ -97,7 +116,7 @@ fun LogsScreen() {
                                 Toast.makeText(context, "日志已复制到剪贴板", Toast.LENGTH_SHORT).show()
                             }
                         ) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "复制日志", modifier = Modifier.size(20.dp))
+                            Icon(FeatherIcons.Copy, contentDescription = "复制日志", modifier = Modifier.size(18.dp))
                         }
 
                         IconButton(
@@ -106,31 +125,37 @@ fun LogsScreen() {
                                 Toast.makeText(context, "日志已清空", Toast.LENGTH_SHORT).show()
                             }
                         ) {
-                            Icon(Icons.Default.DeleteOutline, contentDescription = "清空日志", modifier = Modifier.size(20.dp))
+                            Icon(
+                                FeatherIcons.Trash2,
+                                contentDescription = "清空日志",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
 
                 // 搜索输入框
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("搜索 Tag 或关键字...") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    placeholder = { Text("搜索 Tag 或关键字...", fontSize = 13.sp) },
+                    leadingIcon = { Icon(FeatherIcons.Search, contentDescription = null, modifier = Modifier.size(16.dp)) },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Clear, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(FeatherIcons.X, contentDescription = null, modifier = Modifier.size(16.dp))
                             }
                         }
                     },
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
 
                 // 筛选芯片与自动滚动开关
                 Row(
@@ -145,27 +170,31 @@ fun LogsScreen() {
                         FilterChip(
                             selected = selectedLevel == null,
                             onClick = { selectedLevel = null },
+                            shape = RoundedCornerShape(8.dp),
                             label = { Text("全部", fontSize = 11.sp) }
                         )
                         FilterChip(
                             selected = selectedLevel == LogLevel.INFO,
                             onClick = { selectedLevel = if (selectedLevel == LogLevel.INFO) null else LogLevel.INFO },
+                            shape = RoundedCornerShape(8.dp),
                             label = { Text("INFO", fontSize = 11.sp) }
                         )
                         FilterChip(
                             selected = selectedLevel == LogLevel.DEBUG,
                             onClick = { selectedLevel = if (selectedLevel == LogLevel.DEBUG) null else LogLevel.DEBUG },
+                            shape = RoundedCornerShape(8.dp),
                             label = { Text("DEBUG", fontSize = 11.sp) }
                         )
                         FilterChip(
                             selected = selectedLevel == LogLevel.ERROR,
                             onClick = { selectedLevel = if (selectedLevel == LogLevel.ERROR) null else LogLevel.ERROR },
+                            shape = RoundedCornerShape(8.dp),
                             label = { Text("ERROR", fontSize = 11.sp) }
                         )
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("自动滚动", style = MaterialTheme.typography.labelSmall)
+                        Text("自动滚屏", style = MaterialTheme.typography.labelSmall)
                         Checkbox(
                             checked = autoScroll,
                             onCheckedChange = { autoScroll = it }
@@ -177,77 +206,97 @@ fun LogsScreen() {
 
         // ==================== 黑色终端风格日志输出区 ====================
         Surface(
-            color = Color(0xFF16181D),
-            shape = MaterialTheme.shapes.medium,
+            color = Color(0xFF0D1117),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color(0xFF30363D)),
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
         ) {
-            if (filteredLogs.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Default.Notes,
-                            contentDescription = null,
-                            tint = Color(0xFF6E7681),
-                            modifier = Modifier.size(36.dp)
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            if (logs.isEmpty()) "暂无日志，启动服务或执行操作后在此显示" else "无符合筛选条件的日志",
-                            style = MonoStyle,
-                            color = Color(0xFF6E7681),
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            } else {
-                LazyColumn(
-                    state = listState,
+            Column(modifier = Modifier.fillMaxSize()) {
+                // 模拟 macOS 终端控制条
+                Row(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                        .fillMaxWidth()
+                        .background(Color(0xFF161B22))
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(filteredLogs, key = { it.id }) { item ->
-                        val levelColor = when (item.level) {
-                            LogLevel.DEBUG -> Color(0xFF58A6FF)
-                            LogLevel.INFO -> Color(0xFF3FB950)
-                            LogLevel.WARN -> Color(0xFFD29922)
-                            LogLevel.ERROR -> Color(0xFFF85149)
-                        }
+                    Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color(0xFFEF4444)))
+                    Spacer(Modifier.width(6.dp))
+                    Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color(0xFFF59E0B)))
+                    Spacer(Modifier.width(6.dp))
+                    Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color(0xFF10B981)))
+                    Spacer(Modifier.width(12.dp))
+                    Text("terminal: locctl ~ live logs", style = MonoStyle, fontSize = 11.sp, color = Color(0xFF8B949E))
+                }
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Text(
-                                "[${item.time}]",
-                                color = Color(0xFF8B949E),
-                                style = MonoStyle.copy(fontSize = 11.sp)
+                if (filteredLogs.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                FeatherIcons.FileText,
+                                contentDescription = null,
+                                tint = Color(0xFF484F58),
+                                modifier = Modifier.size(36.dp)
                             )
-                            Spacer(Modifier.width(6.dp))
+                            Spacer(Modifier.height(8.dp))
                             Text(
-                                "[${item.level.name}]",
-                                color = levelColor,
-                                style = MonoStyle.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                if (logs.isEmpty()) "暂无日志，启动服务或执行操作后在此显示" else "无符合筛选条件的日志",
+                                style = MonoStyle,
+                                color = Color(0xFF6E7681),
+                                fontSize = 12.sp
                             )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                "[${item.tag}]",
-                                color = Color(0xFFD2A8FF),
-                                style = MonoStyle.copy(fontSize = 11.sp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                item.message,
-                                color = Color(0xFFC9D1D9),
-                                style = MonoStyle.copy(fontSize = 11.sp),
-                                modifier = Modifier.weight(1f)
-                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(filteredLogs, key = { it.id }) { item ->
+                            val levelColor = when (item.level) {
+                                LogLevel.DEBUG -> Color(0xFF58A6FF)
+                                LogLevel.INFO -> Color(0xFF3FB950)
+                                LogLevel.WARN -> Color(0xFFD29922)
+                                LogLevel.ERROR -> Color(0xFFF85149)
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text(
+                                    "[${item.time}]",
+                                    color = Color(0xFF8B949E),
+                                    style = MonoStyle.copy(fontSize = 11.sp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    "[${item.level.name}]",
+                                    color = levelColor,
+                                    style = MonoStyle.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    "[${item.tag}]",
+                                    color = Color(0xFFD2A8FF),
+                                    style = MonoStyle.copy(fontSize = 11.sp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    item.message,
+                                    color = Color(0xFFC9D1D9),
+                                    style = MonoStyle.copy(fontSize = 11.sp),
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
                 }
@@ -255,3 +304,4 @@ fun LogsScreen() {
         }
     }
 }
+

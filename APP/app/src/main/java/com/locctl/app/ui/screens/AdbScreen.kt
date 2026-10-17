@@ -5,13 +5,13 @@ import android.content.Intent
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import com.locctl.app.adb.AdbManager
 import com.locctl.app.adb.AdbPairingService
 import com.locctl.app.adb.AdbState
+import compose.icons.FeatherIcons
+import compose.icons.feathericons.*
 
 @Composable
 fun AdbScreen() {
@@ -51,177 +53,226 @@ fun AdbScreen() {
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        val dotColor = when (adbState) {
-                            AdbState.CONNECTED -> Color(0xFF2EA44F)
-                            AdbState.CONNECTING -> Color(0xFFD29922)
-                            AdbState.DISCONNECTED -> Color(0xFFCF222E)
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        FeatherIcons.Activity,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                "无线 ADB 服务状态",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
-                        Box(
-                            modifier = Modifier
-                                .size(14.dp)
-                                .clip(CircleShape)
-                                .background(dotColor)
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        Text(
-                            "无线 ADB 服务状态",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
 
-                    Surface(
-                        color = when (adbState) {
-                            AdbState.CONNECTED -> Color(0xFF2EA44F).copy(alpha = 0.12f)
-                            AdbState.CONNECTING -> Color(0xFFD29922).copy(alpha = 0.12f)
-                            AdbState.DISCONNECTED -> Color(0xFFCF222E).copy(alpha = 0.12f)
-                        },
-                        shape = MaterialTheme.shapes.small
-                    ) {
-                        Text(
-                            when (adbState) {
-                                AdbState.CONNECTED -> "已连接 (就绪)"
-                                AdbState.CONNECTING -> "正在握手连接..."
-                                AdbState.DISCONNECTED -> "未连接 (待配对)"
-                            },
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = when (adbState) {
-                                AdbState.CONNECTED -> Color(0xFF2EA44F)
-                                AdbState.CONNECTING -> Color(0xFFD29922)
-                                AdbState.DISCONNECTED -> Color(0xFFCF222E)
-                            }
-                        )
-                    }
-                }
+                        val dotColor = when (adbState) {
+                            AdbState.CONNECTED -> Color(0xFF10B981)
+                            AdbState.CONNECTING -> Color(0xFFF59E0B)
+                            AdbState.DISCONNECTED -> Color(0xFFEF4444)
+                        }
 
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    adbStatusText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                if (activePort > 0) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        "活跃通信端口: 127.0.0.1:$activePort",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                Spacer(Modifier.height(16.dp))
-                HorizontalDivider()
-                Spacer(Modifier.height(14.dp))
-
-                Text(
-                    "快捷连接控制",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                context.startService(AdbPairingService.startIntent(context))
-                                Toast.makeText(context, "配对通知已下发！请下拉手机通知栏输入 6 位配对码", Toast.LENGTH_LONG).show()
-                            } else {
-                                Toast.makeText(context, "无线配对需要 Android 11 (API 30) 及以上系统", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.NotificationsActive, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("发送配对通知")
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            runCatching {
-                                context.startActivity(
-                                    Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)
-                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        Surface(
+                            color = dotColor.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, dotColor.copy(alpha = 0.35f)),
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(dotColor)
                                 )
-                            }.onFailure {
-                                Toast.makeText(context, "无法直接跳转开发者选项，请在系统设置中找到开发者选项", Toast.LENGTH_SHORT).show()
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    when (adbState) {
+                                        AdbState.CONNECTED -> "已连接"
+                                        AdbState.CONNECTING -> "正在握手..."
+                                        AdbState.DISCONNECTED -> "未连接"
+                                    },
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = dotColor
+                                )
                             }
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("系统无线调试")
+                        }
                     }
-                }
 
-                Spacer(Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = manualPortText,
-                        onValueChange = { manualPortText = it.filter { c -> c.isDigit() } },
-                        label = { Text("手动连接端口 (Port)") },
-                        placeholder = { Text("例如 38791") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        adbStatusText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Button(
-                        onClick = {
-                            val port = manualPortText.toIntOrNull()
-                            if (port != null && port in 1..65535) {
-                                AdbManager.connect(context, port)
-                            } else {
-                                Toast.makeText(context, "请输入合法端口 (1~65535)", Toast.LENGTH_SHORT).show()
+
+                    if (activePort > 0) {
+                        Spacer(Modifier.height(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    FeatherIcons.Zap,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    "活跃端口: 127.0.0.1:$activePort",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.SemiBold
+                                )
                             }
-                        },
-                        enabled = adbState != AdbState.CONNECTING
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+                    Spacer(Modifier.height(14.dp))
+
+                    Text(
+                        "快捷连接控制",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("直连")
+                        Button(
+                            onClick = {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                    context.startService(AdbPairingService.startIntent(context))
+                                    Toast.makeText(context, "配对通知已下发！请下拉通知栏输入 6 位配对码", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "无线配对需要 Android 11 及以上系统", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            shape = CircleShape,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(FeatherIcons.Bell, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("发送配对通知", fontSize = 13.sp)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)
+                                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    )
+                                }
+                            },
+                            shape = CircleShape,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(FeatherIcons.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("系统无线调试", fontSize = 13.sp)
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = manualPortText,
+                            onValueChange = { manualPortText = it.filter { c -> c.isDigit() } },
+                            label = { Text("手动连接端口 (Port)") },
+                            placeholder = { Text("例如 38791") },
+                            leadingIcon = {
+                                Icon(FeatherIcons.Link, contentDescription = null, modifier = Modifier.size(16.dp))
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+                        Button(
+                            onClick = {
+                                val port = manualPortText.toIntOrNull()
+                                if (port != null && port in 1..65535) {
+                                    AdbManager.connect(context, port)
+                                } else {
+                                    Toast.makeText(context, "请输入合法端口 (1~65535)", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            shape = CircleShape,
+                            enabled = adbState != AdbState.CONNECTING,
+                            modifier = Modifier.height(52.dp)
+                        ) {
+                            Icon(FeatherIcons.Zap, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("直连")
+                        }
                     }
                 }
             }
-        }
         }
 
         // ==================== 卡片 2：新手全流程操作指南 ====================
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(18.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.MenuBook,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    FeatherIcons.BookOpen,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(10.dp))
                         Text(
                             "无线 ADB 极简配对指南 (Shizuku 同款)",
                             style = MaterialTheme.typography.titleMedium,
@@ -268,19 +319,29 @@ fun AdbScreen() {
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.04f)
                 )
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(18.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.VerifiedUser,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    FeatherIcons.Shield,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(10.dp))
                         Text(
                             "底层核心原理与微信防漏要点",
                             style = MaterialTheme.typography.titleMedium,
@@ -288,7 +349,7 @@ fun AdbScreen() {
                         )
                     }
 
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(12.dp))
 
                     Text(
                         "★ 彻底免选模拟位置应用（防被检测）：",
@@ -300,7 +361,7 @@ fun AdbScreen() {
                         "传统定位软件需要用户在开发者选项中「选择模拟位置信息应用」，成熟 APP 极易扫描到该配置。本软件直接由无线 ADB（Shell UID 2000 特权）向系统内核注入，因此开发者选项中的模拟位置应用【必须保持为无（不选择）】，彻底规避应用层扫描！",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 18.sp
+                        lineHeight = 19.sp
                     )
 
                     Spacer(Modifier.height(10.dp))
@@ -317,7 +378,7 @@ fun AdbScreen() {
                         "3. 在地图界面停留 5~8 秒，让腾讯地图完成底图与定位点加载刷新。",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 18.sp
+                        lineHeight = 19.sp
                     )
                 }
             }
@@ -330,18 +391,19 @@ private fun GuideStepItem(step: String, title: String, desc: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(vertical = 7.dp),
         verticalAlignment = Alignment.Top
     ) {
         Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(22.dp)
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+            modifier = Modifier.size(24.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
                     text = step,
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -364,3 +426,4 @@ private fun GuideStepItem(step: String, title: String, desc: String) {
         }
     }
 }
+
