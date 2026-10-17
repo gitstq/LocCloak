@@ -2,6 +2,34 @@
 (function () {
   'use strict';
 
+  // 修复 Leaflet 默认 icon 路径解析失败问题
+  if (typeof L !== 'undefined' && L.Icon && L.Icon.Default) {
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'vendor/leaflet/images/marker-icon-2x.png',
+      iconUrl: 'vendor/leaflet/images/marker-icon.png',
+      shadowUrl: 'vendor/leaflet/images/marker-shadow.png',
+      imagePath: 'vendor/leaflet/images/',
+    });
+  }
+
+  // 高清矢量定位图钉（杜绝任何图片资源丢失问题，且自带精美发光阴影与精确定位针尖）
+  const locationPinIcon = typeof L !== 'undefined' ? L.divIcon({
+    className: 'custom-map-pin',
+    html: `
+      <div class="pin-marker-body">
+        <svg viewBox="0 0 32 44" width="32" height="44" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));">
+          <path d="M16 0C7.16 0 0 7.16 0 16c0 11.2 14.1 26.3 14.7 27a1.8 1.8 0 0 0 2.6 0C17.9 42.3 32 27.2 32 16 32 7.16 24.84 0 16 0z" fill="#ff3838"/>
+          <circle cx="16" cy="15" r="6.5" fill="#ffffff"/>
+          <circle cx="16" cy="15" r="3" fill="#ff3838"/>
+        </svg>
+        <div class="pin-pulse-wave"></div>
+      </div>
+    `,
+    iconSize: [32, 44],
+    iconAnchor: [16, 43],
+  }) : null;
+
   // ----------------------------------------------------------- 核心状态
   let map = null;
   let currentMarker = null;
@@ -144,6 +172,7 @@
     // 初始标记点（可拖动）
     currentMarker = L.marker(defaultCenter, {
       draggable: true,
+      icon: locationPinIcon || new L.Icon.Default(),
       title: '拖动可调整注入位置',
     }).addTo(map);
 
@@ -199,7 +228,10 @@
     if (currentMarker) {
       currentMarker.setLatLng(latlng);
     } else {
-      currentMarker = L.marker(latlng, { draggable: true }).addTo(map);
+      currentMarker = L.marker(latlng, {
+        draggable: true,
+        icon: locationPinIcon || new L.Icon.Default(),
+      }).addTo(map);
     }
     map.panTo(latlng);
     updateCoordPreviews();

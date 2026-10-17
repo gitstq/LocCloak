@@ -972,3 +972,50 @@ input[type="range"] {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* 高清矢量定位图钉样式 */
+.custom-map-pin {
+  background: transparent !important;
+  border: none !important;
+}
+
+.pin-marker-body {
+  position: relative;
+  width: 32px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  transform-origin: 16px 44px;
+  transition: transform 0.15s ease-out;
+}
+
+.pin-marker-body:hover {
+  transform: scale(1.1);
+}
+
+.pin-marker-body:active {
+  cursor: grabbing;
+  transform: scale(1.15) translateY(-4px);
+}
+
+.pin-pulse-wave {
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 5px;
+  background: rgba(255, 56, 56, 0.45);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255, 56, 56, 0.7);
+  animation: pinPulse 2s infinite ease-out;
+}
+
+@keyframes pinPulse {
+  0% { transform: translateX(-50%) scale(0.8); opacity: 0.9; }
+  70% { transform: translateX(-50%) scale(2.2); opacity: 0; }
+  100% { transform: translateX(-50%) scale(2.2); opacity: 0; }
+}
+
