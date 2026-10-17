@@ -1,10 +1,11 @@
 package com.locctl.app.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,7 +45,6 @@ fun MainScreen(
     initialLat: Double? = null,
     initialLng: Double? = null
 ) {
-    // 默认展示目标位置页面（如果有外部坐标传入），否则根据习惯展示 ADB 或 Location
     var selectedTab by remember {
         mutableStateOf(if (initialLat != null && initialLng != null) AppTab.LOCATION else AppTab.ADB)
     }
@@ -73,46 +73,14 @@ fun MainScreen(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             )
-        },
-        bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp
-            ) {
-                AppTab.entries.forEach { tab ->
-                    val isSelected = selectedTab == tab
-                    NavigationBarItem(
-                        selected = isSelected,
-                        onClick = { selectedTab = tab },
-                        icon = {
-                            Icon(
-                                tab.icon,
-                                contentDescription = tab.title,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        },
-                        label = {
-                            Text(
-                                tab.title,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 12.sp
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer
-                        )
-                    )
-                }
-            }
         }
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding())
         ) {
+            // 1. 各功能主页面
             when (selectedTab) {
                 AppTab.ADB -> AdbScreen()
                 AppTab.LOCATION -> LocationScreen(
@@ -122,6 +90,82 @@ fun MainScreen(
                 AppTab.LOGS -> LogsScreen()
                 AppTab.ABOUT -> AboutScreen()
             }
+
+            // 2. 独立的悬浮在页面之上的圆形按钮组，中间完全由空白隔开
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AppTab.entries.forEach { tab ->
+                    val isSelected = selectedTab == tab
+                    FloatingCircularTabButton(
+                        tab = tab,
+                        isSelected = isSelected,
+                        onClick = { selectedTab = tab }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FloatingCircularTabButton(
+    tab: AppTab,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            onClick = onClick
+        )
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+            shadowElevation = if (isSelected) 8.dp else 4.dp,
+            border = BorderStroke(
+                1.dp,
+                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+            ),
+            modifier = Modifier
+                .size(54.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onClick)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    tab.icon,
+                    contentDescription = tab.title,
+                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(5.dp))
+
+        Surface(
+            shape = CircleShape,
+            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            shadowElevation = 1.dp
+        ) {
+            Text(
+                tab.title,
+                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                style = MaterialTheme.typography.labelSmall,
+                fontSize = 11.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
