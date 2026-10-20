@@ -1,29 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 定位图钉 + 十字准星，工具类图标语义 -->
+<!-- 隐影斗篷 (LocCloak) 全新专属自适应矢量图标：隐匿护盾 + 科技斗篷飞羽 + 发光定位图钉 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- 外圈准星 -->
+    <!-- 1. 外部环形隐匿雷达光环 (Stealth Radar Halo) -->
     <path
-        android:strokeColor="#4FC3F7"
-        android:strokeWidth="2.5"
+        android:strokeColor="#2040D090"
+        android:strokeWidth="1.5"
         android:fillColor="#00000000"
-        android:pathData="M54,26 a28,28 0 1,0 0.01,0 z" />
-    <!-- 准星刻度 -->
-    <path
-        android:strokeColor="#4FC3F7"
-        android:strokeWidth="2.5"
-        android:pathData="M54,20 L54,26 M54,82 L54,88 M20,54 L26,54 M88,54 L82,54" />
+        android:pathData="M54,23 A31,31 0 1,1 53.9,23 Z" />
 
-    <!-- 图钉主体 -->
+    <!-- 2. 外部点缀防嗅探扫描刻度弧线 -->
     <path
-        android:fillColor="#0288D1"
-        android:pathData="M54,36 C46.8,36 41,41.8 41,49 C41,58.5 54,72 54,72 C54,72 67,58.5 67,49 C67,41.8 61.2,36 54,36 Z" />
-    <!-- 图钉内孔 -->
+        android:strokeColor="#5010B981"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M32,32 A31,31 0 0,1 76,32" />
     <path
-        android:fillColor="#0E1116"
-        android:pathData="M54,42.5 m-5.5,0 a5.5,5.5 0 1,0 11,0 a5.5,5.5 0 1,0 -11,0" />
+        android:strokeColor="#5010B981"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M38,78 A31,31 0 0,0 70,78" />
+
+    <!-- 3. 隐影斗篷外层轮廓护甲 (Outer Stealth Cloak/Shield Silhouette) -->
+    <path
+        android:fillColor="#152E2B"
+        android:strokeColor="#302EA44F"
+        android:strokeWidth="1.2"
+        android:pathData="M54,25 C68,25 79,32 79,48 C79,66 54,84 54,84 C54,84 29,66 29,48 C29,32 40,25 54,25 Z" />
+
+    <!-- 4. 斗篷内衬流线与羽翼曲面 (Aerodynamic Cloak Drapes) -->
+    <!-- 左侧斗篷披风羽翼 -->
+    <path
+        android:fillColor="#1D4E3E"
+        android:pathData="M54,26 C43,26 33,34 33,48 C33,63 54,79 54,79 C54,79 46,62 46,49 C46,38 50,30 54,26 Z" />
+    <!-- 右侧斗篷披风羽翼 -->
+    <path
+        android:fillColor="#143D31"
+        android:pathData="M54,26 C65,26 75,34 75,48 C75,63 54,79 54,79 C54,79 62,62 62,49 C62,38 58,30 54,26 Z" />
+
+    <!-- 5. 核心翡翠防嗅探护盾 (Central Privacy Shield) -->
+    <path
+        android:fillColor="#0D9488"
+        android:strokeColor="#2DD4BF"
+        android:strokeWidth="1.2"
+        android:pathData="M54,34 C63,34 70,39 70,49 C70,61 54,73 54,73 C54,73 38,61 38,49 C38,39 45,34 54,34 Z" />
+
+    <!-- 6. 核心发光定位图钉主体 (Luminous Location Pin) -->
+    <!-- 图钉外形 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,39 C49,39 45,43 45,48 C45,54.5 54,64 54,64 C54,64 63,54.5 63,48 C63,43 59,39 54,39 Z" />
+
+    <!-- 7. 图钉核心隐匿翡翠晶核 (Stealth Emerald Core) -->
+    <path
+        android:fillColor="#0F766E"
+        android:pathData="M54,44 A4,4 0 1,1 53.9,44 Z" />
+    <path
+        android:fillColor="#34D399"
+        android:pathData="M54,46 A2,2 0 1,1 53.9,46 Z" />
 </vector>

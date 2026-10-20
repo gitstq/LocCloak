@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#0E1116</color>
+    <!-- 隐影斗篷：沉稳深邃的黑曜石夜幕背景 -->
+    <color name="ic_launcher_background">#0B111A</color>
 </resources>

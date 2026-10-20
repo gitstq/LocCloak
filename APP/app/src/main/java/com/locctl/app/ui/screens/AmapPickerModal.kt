@@ -646,7 +646,7 @@ private fun fetchReverseGeocode(lat: Double, lng: Double): String {
         val url = URL("https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lng&zoom=18&addressdetails=1")
         val conn = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
-            setRequestProperty("User-Agent", "LocCloakApp/2.2.0")
+            setRequestProperty("User-Agent", "LocCloakApp/2.3.0")
             connectTimeout = 4000
             readTimeout = 4000
         }
@@ -677,7 +677,7 @@ private fun searchLocations(query: String): List<AmapSearchResult> {
         val url = URL("https://nominatim.openstreetmap.org/search?q=$encoded&format=json&limit=6&countrycodes=cn")
         val conn = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
-            setRequestProperty("User-Agent", "LocCloakApp/2.2.0")
+            setRequestProperty("User-Agent", "LocCloakApp/2.3.0")
             connectTimeout = 5000
             readTimeout = 5000
         }
