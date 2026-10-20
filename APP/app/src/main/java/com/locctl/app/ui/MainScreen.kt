@@ -42,6 +42,7 @@ import compose.icons.feathericons.Download
 import compose.icons.feathericons.MoreVertical
 import compose.icons.feathericons.Moon
 import compose.icons.feathericons.Sun
+import compose.icons.feathericons.Smartphone
 import compose.icons.feathericons.Check
 import androidx.compose.ui.draw.scale
 import com.locctl.app.ui.theme.ThemeManager
@@ -337,7 +338,6 @@ private fun TopAppBarOptionsMenu() {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     val currentThemeMode by ThemeManager.themeMode.collectAsState()
-    val isDark = ThemeManager.isDark(currentThemeMode)
 
     Box {
         IconButton(
@@ -356,86 +356,112 @@ private fun TopAppBarOptionsMenu() {
             expanded = expanded,
             onDismissRequest = { expanded = false },
             shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.widthIn(min = 210.dp)
+            modifier = Modifier.widthIn(min = 220.dp)
         ) {
-            // 1. 深色模式开关项
-            DropdownMenuItem(
-                text = {
-                    Column {
-                        Text(
-                            "深色模式",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            when (currentThemeMode) {
-                                ThemeMode.DARK -> "已开启深色"
-                                ThemeMode.LIGHT -> "已开启浅色"
-                                ThemeMode.SYSTEM -> "跟随系统设置"
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp
-                        )
-                    }
-                },
-                leadingIcon = {
-                    Surface(
-                        shape = CircleShape,
-                        color = if (isDark) MaterialTheme.colorScheme.primaryContainer else Color(0xFFF59E0B).copy(alpha = 0.15f),
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                if (isDark) FeatherIcons.Moon else FeatherIcons.Sun,
-                                contentDescription = null,
-                                tint = if (isDark) MaterialTheme.colorScheme.primary else Color(0xFFF59E0B),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                },
-                trailingIcon = {
-                    Switch(
-                        checked = isDark,
-                        onCheckedChange = { checked ->
-                            ThemeManager.setMode(context, if (checked) ThemeMode.DARK else ThemeMode.LIGHT)
-                            expanded = false
-                        },
-                        modifier = Modifier.scale(0.8f)
-                    )
-                },
+            Text(
+                "外观主题",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+            )
+
+            // 1. 跟随系统选项
+            ThemeModeDropdownItem(
+                title = "跟随系统",
+                subtitle = "随系统外观自动切换深浅",
+                icon = FeatherIcons.Smartphone,
+                iconColor = Color(0xFF6366F1),
+                isSelected = currentThemeMode == ThemeMode.SYSTEM,
                 onClick = {
-                    ThemeManager.toggleDarkMode(context, isDark)
+                    ThemeManager.setMode(context, ThemeMode.SYSTEM)
                     expanded = false
                 }
             )
 
-            // 2. 跟随系统选项
-            if (currentThemeMode != ThemeMode.SYSTEM) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            "恢复跟随系统",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            FeatherIcons.Check,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    },
-                    onClick = {
-                        ThemeManager.setMode(context, ThemeMode.SYSTEM)
-                        expanded = false
-                    }
-                )
-            }
+            // 2. 浅色模式选项
+            ThemeModeDropdownItem(
+                title = "浅色模式",
+                subtitle = "明亮白昼清新视觉",
+                icon = FeatherIcons.Sun,
+                iconColor = Color(0xFFF59E0B),
+                isSelected = currentThemeMode == ThemeMode.LIGHT,
+                onClick = {
+                    ThemeManager.setMode(context, ThemeMode.LIGHT)
+                    expanded = false
+                }
+            )
+
+            // 3. 深色模式选项
+            ThemeModeDropdownItem(
+                title = "深色模式",
+                subtitle = "夜间舒适护眼高对比度",
+                icon = FeatherIcons.Moon,
+                iconColor = Color(0xFF8B5CF6),
+                isSelected = currentThemeMode == ThemeMode.DARK,
+                onClick = {
+                    ThemeManager.setMode(context, ThemeMode.DARK)
+                    expanded = false
+                }
+            )
         }
     }
+}
+
+@Composable
+private fun ThemeModeDropdownItem(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconColor: Color,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    DropdownMenuItem(
+        text = {
+            Column {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp
+                )
+            }
+        },
+        leadingIcon = {
+            Surface(
+                shape = CircleShape,
+                color = if (isSelected) iconColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.size(32.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = if (isSelected) iconColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        },
+        trailingIcon = {
+            if (isSelected) {
+                Icon(
+                    FeatherIcons.Check,
+                    contentDescription = "当前选择",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        },
+        onClick = onClick,
+        modifier = if (isSelected) Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)) else Modifier
+    )
 }
