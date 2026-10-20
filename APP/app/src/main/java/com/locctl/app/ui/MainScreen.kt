@@ -38,11 +38,15 @@ import com.locctl.app.BuildConfig
 import com.locctl.app.update.UpdateCheckResult
 import com.locctl.app.update.UpdateInfo
 import com.locctl.app.update.UpdateManager
+import androidx.activity.compose.BackHandler
+import com.locctl.app.ui.screens.AntiLeakScreen
 import compose.icons.feathericons.Download
 import compose.icons.feathericons.MoreVertical
 import compose.icons.feathericons.Moon
 import compose.icons.feathericons.Sun
 import compose.icons.feathericons.Smartphone
+import compose.icons.feathericons.Shield
+import compose.icons.feathericons.ChevronRight
 import compose.icons.feathericons.Check
 import androidx.compose.ui.draw.scale
 import com.locctl.app.ui.theme.ThemeManager
@@ -73,6 +77,11 @@ fun MainScreen(
 
     // 后台静默检查更新状态（若无更新或网络故障完全静默不打扰；若有更新则弹出询问）
     var autoUpdateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
+    var showAntiLeakScreen by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = showAntiLeakScreen) {
+        showAntiLeakScreen = false
+    }
 
     LaunchedEffect(Unit) {
         delay(1500) // 冷启动后延时 1.5 秒发起轻量检测，避免资源竞争
@@ -80,6 +89,11 @@ fun MainScreen(
         if (result is UpdateCheckResult.HasUpdate) {
             autoUpdateInfo = result.info
         }
+    }
+
+    if (showAntiLeakScreen) {
+        AntiLeakScreen(onBack = { showAntiLeakScreen = false })
+        return
     }
 
     Scaffold(
@@ -105,7 +119,19 @@ fun MainScreen(
                         modifier = Modifier.padding(end = 6.dp)
                     ) {
                         InjectionTopStatusBadge()
-                        TopAppBarOptionsMenu()
+                        // 独立防泄漏盾牌按钮 (直接一键直达)
+                        IconButton(
+                            onClick = { showAntiLeakScreen = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                FeatherIcons.Shield,
+                                contentDescription = "真实定位防泄漏封堵",
+                                tint = Color(0xFF2EA44F),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        TopAppBarOptionsMenu(onOpenAntiLeak = { showAntiLeakScreen = true })
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -127,7 +153,7 @@ fun MainScreen(
                     initialLng = initialLng
                 )
                 AppTab.LOGS -> LogsScreen()
-                AppTab.ABOUT -> AboutScreen()
+                AppTab.ABOUT -> AboutScreen(onNavigateToAntiLeak = { showAntiLeakScreen = true })
             }
 
             // 2. 独立的悬浮在页面之上的圆形按钮组，中间完全由空白隔开
@@ -334,7 +360,7 @@ private fun InjectionTopStatusBadge() {
 }
 
 @Composable
-private fun TopAppBarOptionsMenu() {
+private fun TopAppBarOptionsMenu(onOpenAntiLeak: () -> Unit) {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     val currentThemeMode by ThemeManager.themeMode.collectAsState()
@@ -356,8 +382,61 @@ private fun TopAppBarOptionsMenu() {
             expanded = expanded,
             onDismissRequest = { expanded = false },
             shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.widthIn(min = 220.dp)
+            modifier = Modifier.widthIn(min = 230.dp)
         ) {
+            // 1. 真实定位防泄漏封堵 菜单按钮项
+            DropdownMenuItem(
+                text = {
+                    Column {
+                        Text(
+                            "防泄漏与反嗅探封堵",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "基站/Wi-Fi/蓝牙/系统NLP拦截",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 11.sp
+                        )
+                    }
+                },
+                leadingIcon = {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFF2EA44F).copy(alpha = 0.15f),
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                FeatherIcons.Shield,
+                                contentDescription = null,
+                                tint = Color(0xFF2EA44F),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                },
+                trailingIcon = {
+                    Icon(
+                        FeatherIcons.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                },
+                onClick = {
+                    expanded = false
+                    onOpenAntiLeak()
+                }
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 4.dp),
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+            )
+
             Text(
                 "外观主题",
                 style = MaterialTheme.typography.labelSmall,
