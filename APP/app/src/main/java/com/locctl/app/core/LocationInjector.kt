@@ -21,10 +21,13 @@ class LocationInjector(private val adbManager: AdbManager = AdbManager) {
 
     /**
      * 接管系统的 gps、network、fused 三源
-     * 单条合并指令执行，消除多次网络交互延迟与乱序风险
+     * 并动态整合用户在关于页面开启的各项防泄漏封堵指令
      */
     suspend fun installProviders() = withContext(Dispatchers.IO) {
-        AppLogger.i(TAG, "正在注册并接管系统的 gps, network, fused 三大定位源...")
+        AppLogger.i(TAG, "正在注册并接管系统的 gps, network, fused 定位源...")
+        val context = com.locctl.app.LocctlApp.get()
+        val extraCmds = AntiLeakManager.getActiveInstallCommands(context)
+
         val cmd = buildString {
             append("appops set com.android.shell android:mock_location allow; ")
             append("cmd location providers remove-test-provider gps 2>/dev/null; ")
@@ -33,15 +36,16 @@ class LocationInjector(private val adbManager: AdbManager = AdbManager) {
             append("cmd location providers remove-test-provider network 2>/dev/null; ")
             append("cmd location providers add-test-provider network --requiresNetwork --requiresCell --supportsAltitude --supportsSpeed --supportsBearing; ")
             append("cmd location providers set-test-provider-enabled network true; ")
-            append("settings put global wifi_scan_always_enabled 0 2>/dev/null; ")
-            append("cmd appops set com.tencent.mm android:wifi_scan ignore 2>/dev/null; ")
-            append("cmd appops set com.tencent.mm android:nearby_wifi_devices ignore 2>/dev/null; ")
             append("cmd location providers remove-test-provider fused 2>/dev/null; ")
             append("cmd location providers add-test-provider fused; ")
             append("cmd location providers set-test-provider-enabled fused true")
+            if (extraCmds.isNotEmpty()) {
+                append("; ")
+                append(extraCmds.joinToString("; "))
+            }
         }
         adbManager.execute(cmd)
-        AppLogger.i(TAG, "已成功接管系统的 gps, network, fused 三大定位源，并屏蔽微信后台 Wi-Fi 逆向嗅探")
+        AppLogger.i(TAG, "已成功接管系统的定位源，并动态生效了 ${extraCmds.size} 项防泄漏底层规则")
     }
 
     /**
@@ -50,9 +54,17 @@ class LocationInjector(private val adbManager: AdbManager = AdbManager) {
     suspend fun pushLocation(wgsLat: Double, wgsLng: Double, accuracy: Float = 3f) = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         val loc = "--location $wgsLat,$wgsLng --accuracy $accuracy --time $now"
-        val cmd = "cmd location providers set-test-provider-location gps $loc; " +
-                  "cmd location providers set-test-provider-location network $loc; " +
-                  "cmd location providers set-test-provider-location fused $loc"
+        val context = com.locctl.app.LocctlApp.get()
+        val isPassiveEnabled = AntiLeakManager.isEnabled(context, "passive_provider")
+
+        val cmd = buildString {
+            append("cmd location providers set-test-provider-location gps $loc; ")
+            append("cmd location providers set-test-provider-location network $loc; ")
+            append("cmd location providers set-test-provider-location fused $loc")
+            if (isPassiveEnabled) {
+                append("; cmd location providers set-test-provider-location passive $loc")
+            }
+        }
         adbManager.execute(cmd)
     }
 
@@ -64,9 +76,7 @@ class LocationInjector(private val adbManager: AdbManager = AdbManager) {
         val cmd = "cmd location providers remove-test-provider gps 2>/dev/null; " +
                   "cmd location providers remove-test-provider network 2>/dev/null; " +
                   "cmd location providers remove-test-provider fused 2>/dev/null; " +
-                  "settings put global wifi_scan_always_enabled 1 2>/dev/null; " +
-                  "cmd appops set com.tencent.mm android:wifi_scan allow 2>/dev/null; " +
-                  "cmd appops set com.tencent.mm android:nearby_wifi_devices allow 2>/dev/null"
+                  "cmd location providers remove-test-provider passive 2>/dev/null"
         runCatching { adbManager.execute(cmd) }
         AppLogger.i(TAG, "真实定位已完全恢复")
     }

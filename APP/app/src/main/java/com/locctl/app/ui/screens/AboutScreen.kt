@@ -29,7 +29,12 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.scale
 import com.locctl.app.BuildConfig
+import com.locctl.app.adb.AdbManager
+import com.locctl.app.adb.AdbState
+import com.locctl.app.core.AntiLeakManager
+import com.locctl.app.core.AntiLeakRule
 import com.locctl.app.update.UpdateCheckResult
 import com.locctl.app.update.UpdateManager
 import compose.icons.FeatherIcons
@@ -48,6 +53,10 @@ fun AboutScreen() {
     var isCheckingUpdate by remember { mutableStateOf(false) }
     var updateCheckResult by remember { mutableStateOf<UpdateCheckResult?>(null) }
     var showChangelogDialog by remember { mutableStateOf(false) }
+
+    val antiLeakVersion by AntiLeakManager.stateVersion.collectAsState()
+    val adbState by AdbManager.state.collectAsState()
+    val isAdbConnected = adbState == AdbState.CONNECTED
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -307,7 +316,238 @@ fun AboutScreen() {
             }
         }
 
-        // ==================== 卡片 3：用户权益与隐私承诺 ====================
+        // ==================== 卡片 4：真实定位防泄漏与底层深潜封堵 (ADB 特权) ====================
+        item {
+            val enabledCount = remember(antiLeakVersion) { AntiLeakManager.getEnabledCount(context) }
+            val totalCount = AntiLeakManager.rules.size
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    // 头部标题与特权标签
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFF2EA44F).copy(alpha = 0.15f),
+                                modifier = Modifier.size(34.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        FeatherIcons.Shield,
+                                        contentDescription = null,
+                                        tint = Color(0xFF2EA44F),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        "真实定位防泄漏封堵",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (isAdbConnected) Color(0xFF2EA44F).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
+                                    ) {
+                                        Text(
+                                            if (isAdbConnected) "ADB 已就绪" else "ADB 未连接",
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (isAdbConnected) Color(0xFF2EA44F) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // 已开启数量徽章
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                        ) {
+                            Text(
+                                "已开启 $enabledCount/$totalCount",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "针对微信与腾讯定位 SDK 的 Wi-Fi 偷窥、蜂窝基站代码、室内蓝牙信标、系统暗中扫描及厂商 NLP 服务进行物理级按需阻断。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp
+                    )
+
+                    Spacer(Modifier.height(14.dp))
+
+                    // 一键全开 / 一键全关控制区
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    val res = AntiLeakManager.applyAll(context, true)
+                                    if (res.isFailure) {
+                                        Toast.makeText(context, "执行失败: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "已一键开启全部防泄漏策略", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            },
+                            shape = CircleShape,
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Icon(FeatherIcons.Check, contentDescription = null, modifier = Modifier.size(15.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("一键全开", fontSize = 13.sp)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    val res = AntiLeakManager.applyAll(context, false)
+                                    if (res.isFailure) {
+                                        Toast.makeText(context, "执行失败: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "已一键关闭并还原默认规则", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            },
+                            shape = CircleShape,
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Icon(FeatherIcons.X, contentDescription = null, modifier = Modifier.size(15.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("一键全关", fontSize = 13.sp)
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // 辅助按钮：强制杀死微信以彻底清除内存缓存
+                    FilledTonalButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                val res = AntiLeakManager.forceStopWeChat()
+                                if (res.isSuccess) {
+                                    Toast.makeText(context, "⚡ 已彻底强制停止微信，请重新进入定位页面", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "清理失败: ${res.exceptionOrNull()?.message ?: "ADB未连接"}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        shape = CircleShape,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                    ) {
+                        Icon(FeatherIcons.Zap, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("清空微信内存定位缓存 (强杀微信)", fontSize = 12.sp)
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+                    HorizontalDivider(thickness = 0.6.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                    Spacer(Modifier.height(8.dp))
+
+                    // 9 大开关列表
+                    AntiLeakManager.rules.forEachIndexed { index, rule ->
+                        val isChecked = remember(antiLeakVersion) { AntiLeakManager.isEnabled(context, rule.id) }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                                    ) {
+                                        Text(
+                                            rule.category,
+                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            fontSize = 10.sp
+                                        )
+                                    }
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        rule.title,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    rule.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    lineHeight = 17.sp,
+                                    fontSize = 12.sp
+                                )
+                            }
+
+                            Spacer(Modifier.width(10.dp))
+
+                            Switch(
+                                checked = isChecked,
+                                onCheckedChange = { checked ->
+                                    coroutineScope.launch {
+                                        val res = AntiLeakManager.applyRule(context, rule.id, checked)
+                                        if (res.isFailure) {
+                                            Toast.makeText(context, "执行失败: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                                        } else if (!isAdbConnected) {
+                                            Toast.makeText(context, "已保存配置（ADB未连接，连接后自动生效）", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(context, "${rule.title} 已${if (checked) "生效" else "关闭"}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.scale(0.85f)
+                            )
+                        }
+
+                        if (index < AntiLeakManager.rules.size - 1) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(vertical = 2.dp),
+                                thickness = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // ==================== 卡片 5：用户权益与隐私承诺 ====================
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
