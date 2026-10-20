@@ -25,6 +25,7 @@ object AdbManager {
 
     private var client: AdbClient? = null
     private var adbKey: AdbKey? = null
+    private var isManualDisconnected = false
 
     private val _state = MutableStateFlow(AdbState.DISCONNECTED)
     val state: StateFlow<AdbState> = _state.asStateFlow()
@@ -56,7 +57,7 @@ object AdbManager {
                 if (port > 0) {
                     AppLogger.i(TAG, "mDNS 侦测到无线调试直连端口: $port")
                     _activePort.value = port
-                    if (_state.value != AdbState.CONNECTED) {
+                    if (_state.value != AdbState.CONNECTED && !isManualDisconnected) {
                         connect(context, port)
                     }
                 } else {
@@ -73,6 +74,7 @@ object AdbManager {
     }
 
     fun connect(context: Context, port: Int) {
+        isManualDisconnected = false
         if (_state.value == AdbState.CONNECTING) return
         _state.value = AdbState.CONNECTING
         _statusText.value = "正在连接端口 $port..."
@@ -135,14 +137,16 @@ object AdbManager {
     }
 
     fun disconnect() {
-        AppLogger.i(TAG, "断开 ADB 连接")
+        isManualDisconnected = true
+        AppLogger.i(TAG, "软件主动断开 ADB 连接")
         client?.close()
         client = null
         _state.value = AdbState.DISCONNECTED
-        _statusText.value = "未连接"
+        _statusText.value = "软件已断开连接（未连接）"
     }
 
     fun onPairingSucceeded() {
+        isManualDisconnected = false
         AppLogger.i(TAG, "无线调试配对握手成功，等待自动嗅探直连端口...")
         _statusText.value = "配对成功，等待连接无线调试..."
     }
@@ -152,7 +156,7 @@ object AdbManager {
     suspend fun execute(command: String): String = withContext(Dispatchers.IO) {
         execMutex.withLock {
             var currentClient = client
-            if (currentClient == null && _activePort.value > 0) {
+            if (currentClient == null && _activePort.value > 0 && !isManualDisconnected) {
                 AppLogger.i(TAG, "ADB 未连接，尝试自动重连端口 ${_activePort.value}...")
                 reconnectSync(_activePort.value)
                 currentClient = client

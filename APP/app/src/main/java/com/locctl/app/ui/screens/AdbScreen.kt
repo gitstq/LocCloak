@@ -131,28 +131,58 @@ fun AdbScreen() {
 
                     if (activePort > 0) {
                         Spacer(Modifier.height(8.dp))
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
                             ) {
-                                Icon(
-                                    FeatherIcons.Zap,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    "活跃端口: 127.0.0.1:$activePort",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        FeatherIcons.Zap,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        "活跃端口: 127.0.0.1:$activePort",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+
+                            if (adbState == AdbState.CONNECTED) {
+                                TextButton(
+                                    onClick = {
+                                        AdbManager.disconnect()
+                                        Toast.makeText(context, "软件已断开 ADB 连接", Toast.LENGTH_SHORT).show()
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    Icon(
+                                        FeatherIcons.XCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        "软件断开",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.error,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
                     }
@@ -211,7 +241,7 @@ fun AdbScreen() {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         OutlinedTextField(
                             value = manualPortText,
@@ -226,6 +256,26 @@ fun AdbScreen() {
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
+
+                        if (adbState == AdbState.CONNECTED) {
+                            OutlinedButton(
+                                onClick = {
+                                    AdbManager.disconnect()
+                                    Toast.makeText(context, "软件已断开 ADB 连接", Toast.LENGTH_SHORT).show()
+                                },
+                                shape = CircleShape,
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                ),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                                modifier = Modifier.height(52.dp)
+                            ) {
+                                Icon(FeatherIcons.XCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("断开", fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+
                         Button(
                             onClick = {
                                 val port = manualPortText.toIntOrNull()
@@ -241,7 +291,7 @@ fun AdbScreen() {
                         ) {
                             Icon(FeatherIcons.Zap, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("直连")
+                            Text(if (adbState == AdbState.CONNECTED) "重连" else "直连")
                         }
                     }
                 }
